@@ -135,7 +135,8 @@
                                 <th class="p-2">পণ্য</th>
                                 <th class="p-2">রেট</th>
                                 <th class="p-2 text-center">পরিমাণ</th>
-                                <th class="p-2 text-center text-green-700 font-bold">🎁 ফ্রি পিস</th>
+                                <th class="p-2 text-center">একক</th>
+                                <th class="p-2 text-center text-green-700 font-bold">🎁 ফ্রি</th>
                                 <th class="p-2 text-right">মোট</th>
                                 <th class="p-2 text-center admin-col hidden">অ্যাকশন</th>
                             </tr>
@@ -215,7 +216,7 @@
                 <!-- Preview Content Box -->
                 <div class="p-4 overflow-y-auto flex-1 bg-slate-50">
                     <div id="preview-slip-box" class="bg-white p-3 border border-gray-300 shadow-sm rounded text-xs font-mono">
-                        <!-- Populated dynamic print structure -->
+                        <!-- Dynamic preview content -->
                     </div>
                 </div>
 
@@ -376,10 +377,19 @@
                         <td class="p-2 font-medium">${p.name}</td>
                         <td class="p-2">৳${p.price}</td>
                         <td class="p-2 text-center">
-                            <input type="number" min="0" value="0" class="w-14 border p-1 rounded text-center qty-input" oninput="calculateTotal()">
+                            <input type="number" min="0" value="0" class="w-12 border p-1 rounded text-center qty-input" oninput="calculateTotal()">
                         </td>
                         <td class="p-2 text-center">
-                            <input type="number" min="0" value="0" class="w-14 border p-1 rounded text-center free-qty-input bg-green-50 text-green-700 font-bold">
+                            <select class="unit-select border rounded p-1 text-[11px] bg-gray-50 font-bold" onchange="calculateTotal()">
+                                <option value="পিস">পিস</option>
+                                <option value="বস্তা">বস্তা</option>
+                                <option value="কার্টন">কার্টন</option>
+                                <option value="কেজি">কেজি</option>
+                                <option value="ডজন">ডজন</option>
+                            </select>
+                        </td>
+                        <td class="p-2 text-center">
+                            <input type="number" min="0" value="0" class="w-12 border p-1 rounded text-center free-qty-input bg-green-50 text-green-700 font-bold">
                         </td>
                         <td class="p-2 text-right font-semibold item-total">৳0</td>
                         <td class="p-2 text-center admin-col ${currentMode === 'Admin' ? '' : 'hidden'}">
@@ -416,10 +426,12 @@
             rows.forEach((row, i) => {
                 const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
                 const freeQty = parseFloat(row.querySelector('.free-qty-input').value) || 0;
+                const unit = row.querySelector('.unit-select').value;
                 if(qty > 0 || freeQty > 0) {
                     itemsOrdered.push({
                         name: products[i].name,
                         qty: qty,
+                        unit: unit,
                         freeQty: freeQty,
                         subtotal: qty * products[i].price
                     });
@@ -482,6 +494,7 @@
             document.getElementById('cash-collected').value = '0';
             document.querySelectorAll('.qty-input').forEach(input => input.value = 0);
             document.querySelectorAll('.free-qty-input').forEach(input => input.value = 0);
+            document.querySelectorAll('.unit-select').forEach(select => select.value = 'পিস');
             calculateTotal();
         }
 
@@ -513,7 +526,7 @@
                 slipHTML += `
                     <tr>
                         <td class="py-1">${item.name}</td>
-                        <td class="text-center">${item.qty}</td>
+                        <td class="text-center">${item.qty} ${item.unit}</td>
                         <td class="text-center font-bold text-green-600">${item.freeQty > 0 ? item.freeQty : '-'}</td>
                         <td class="text-right">৳${item.subtotal}</td>
                     </tr>
@@ -586,7 +599,7 @@
             if(order.phone) msg += `মোবাইল: ${order.phone}\n`;
             msg += `--------------------------\n`;
             order.items.forEach(item => {
-                msg += `• ${item.name}\n  পরিমাণ: ${item.qty}`;
+                msg += `• ${item.name}\n  পরিমাণ: ${item.qty} ${item.unit}`;
                 if(item.freeQty > 0) msg += ` (ফ্রি: ${item.freeQty})`;
                 msg += ` = ৳${item.subtotal}\n`;
             });
@@ -640,7 +653,7 @@
                 tbody.innerHTML += `
                     <tr>
                         <td>${item.name}</td>
-                        <td class="text-center">${item.qty}</td>
+                        <td class="text-center">${item.qty} ${item.unit}</td>
                         <td class="text-center font-bold text-green-700">${item.freeQty > 0 ? item.freeQty : '-'}</td>
                         <td class="text-right">৳${item.subtotal}</td>
                     </tr>
