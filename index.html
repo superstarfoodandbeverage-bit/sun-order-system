@@ -116,17 +116,13 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="text-xs font-semibold text-gray-600">মালিকের নাম:</label>
-                            <input type="text" id="owner-name" placeholder="মালিকের নাম" class="w-full border p-2 rounded-lg text-sm mt-1">
-                        </div>
-                        <div>
-                            <label class="text-xs font-semibold text-gray-600">মোবাইল:</label>
+                            <label class="text-xs font-semibold text-gray-600">মোবাইল নম্বর:</label>
                             <input type="tel" id="shop-phone" placeholder="মোবাইল নম্বর" class="w-full border p-2 rounded-lg text-sm mt-1">
                         </div>
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">ঠিকানা:</label>
-                        <input type="text" id="shop-address" placeholder="ঠিকানা / বাজার" class="w-full border p-2 rounded-lg text-sm mt-1">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600">ঠিকানা:</label>
+                            <input type="text" id="shop-address" placeholder="ঠিকানা / বাজার" class="w-full border p-2 rounded-lg text-sm mt-1">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -210,7 +206,6 @@
             <div class="border-b border-dashed border-black pb-1 text-[10px] mb-1">
                 <div>তারিখ: <span id="r-date"></span></div>
                 <div>দোকান: <span id="r-shop"></span></div>
-                <div>মালিক: <span id="r-owner"></span></div>
                 <div>মোবাইল: <span id="r-phone"></span></div>
                 <div>ঠিকানা: <span id="r-address"></span></div>
             </div>
@@ -241,6 +236,9 @@
     </main>
 
     <script>
+        // Admin Password Setup (Default: 1234)
+        const ADMIN_PIN = "1234";
+
         function updateClock() {
             const now = new Date();
             let hours = now.getHours();
@@ -277,11 +275,16 @@
         function toggleManagerMode() {
             const btn = document.getElementById('mode-btn');
             if(currentMode === 'SR') {
-                currentMode = 'Admin';
-                btn.innerText = 'Admin Mode';
-                btn.className = 'bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow';
-                document.getElementById('admin-toggle-btn').classList.remove('hidden');
-                document.querySelectorAll('.admin-col').forEach(el => el.classList.remove('hidden'));
+                const pass = prompt("অ্যাডমিন মোডে প্রবেশ করতে পাসওয়ার্ড দিন:");
+                if(pass === ADMIN_PIN) {
+                    currentMode = 'Admin';
+                    btn.innerText = 'Admin Mode';
+                    btn.className = 'bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow';
+                    document.getElementById('admin-toggle-btn').classList.remove('hidden');
+                    document.querySelectorAll('.admin-col').forEach(el => el.classList.remove('hidden'));
+                } else if(pass !== null) {
+                    alert("ভুল পাসওয়ার্ড!");
+                }
             } else {
                 currentMode = 'SR';
                 btn.innerText = 'SR Mode';
@@ -382,7 +385,6 @@
             const newOrder = {
                 id: Date.now(),
                 shop: shopName,
-                owner: document.getElementById('owner-name').value,
                 phone: document.getElementById('shop-phone').value,
                 address: document.getElementById('shop-address').value,
                 total: grandTotal,
@@ -411,7 +413,6 @@
 
         function resetForm() {
             document.getElementById('shop-name').value = '';
-            document.getElementById('owner-name').value = '';
             document.getElementById('shop-phone').value = '';
             document.getElementById('shop-address').value = '';
             document.getElementById('shop-gift').value = '';
@@ -497,7 +498,6 @@
         function printThermalReceipt() {
             document.getElementById('r-date').innerText = new Date().toLocaleDateString('bn-BD');
             document.getElementById('r-shop').innerText = document.getElementById('shop-name').value || 'সাধারণ ক্রেতা';
-            document.getElementById('r-owner').innerText = document.getElementById('owner-name').value || '-';
             document.getElementById('r-phone').innerText = document.getElementById('shop-phone').value || '-';
             document.getElementById('r-address').innerText = document.getElementById('shop-address').value || '-';
 
@@ -522,7 +522,6 @@
                 }
             });
 
-            // Gift Details Print
             const shopGift = document.getElementById('shop-gift').value.trim();
             const giftContainer = document.getElementById('r-gift-container');
             if (shopGift) {
