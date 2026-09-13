@@ -26,9 +26,10 @@
     <header class="bg-blue-600 text-white px-4 py-3 shadow-md flex justify-between items-center no-print">
         <div class="w-12"></div>
         <div class="flex items-center space-x-1">
+            <!-- Sun Logo with Text Inside -->
             <div class="relative flex items-center justify-center">
-                <i class="fa-solid fa-sun text-yellow-400 text-4xl"></i>
-                <span class="absolute text-[11px] font-black text-blue-900 tracking-tighter">SUN</span>
+                <i class="fa-solid fa-sun text-yellow-400 text-5xl"></i>
+                <span class="absolute text-[11px] font-black text-blue-900 tracking-tighter uppercase select-none">SUN</span>
             </div>
         </div>
         <div>
@@ -274,7 +275,7 @@
         <!-- THERMAL RECEIPT (PRINT AREA) -->
         <div id="receipt-print-area" class="hidden bg-white text-black">
             <div class="text-center font-black text-xl tracking-wider uppercase" style="font-size:20px; font-weight:900;">
-                SUN PRODUCT
+                ☀️ SUN PRODUCT
             </div>
             <div class="text-center text-[10px] italic mb-1" style="font-size:10px;">
                 ইনকাম এখন হাতের মুঠোয়
@@ -308,7 +309,7 @@
                 বাকি: ৳<span id="r-due">0</span>
             </div>
             <div class="text-center text-[9px] mt-3 border-t border-black pt-1">
-                ধন্যবাদ, আবার আসবেন!
+                আমাদের সাথে থাকার জন্য ধন্যবাদ।
             </div>
         </div>
 
@@ -585,7 +586,7 @@
         function openPreviewModal(order) {
             activeModalOrder = order;
             let slipHTML = `
-                <div class="text-center font-bold text-lg">SUN PRODUCT</div>
+                <div class="text-center font-bold text-lg">☀️ SUN PRODUCT</div>
                 <div class="text-center text-[10px] text-gray-500 italic">ইনকাম এখন হাতের মুঠোয়</div>
                 <div class="text-center text-[10px] font-bold border-y border-black my-1 py-0.5">SUPER STAR FOOD & BEVERAGE</div>
                 <div class="border-b border-dashed border-gray-400 pb-1 mb-1">
@@ -630,7 +631,7 @@
                     <div class="text-red-500">বাকি: ৳${order.due}</div>
                 </div>
                 <div class="text-center text-[9px] text-gray-500 mt-2 border-t pt-1">
-                    ধন্যবাদ, আবার আসবেন!
+                    আমাদের সাথে থাকার জন্য ধন্যবাদ।
                 </div>
             `;
 
@@ -678,7 +679,7 @@
         }
 
         function buildTextMessage(order) {
-            let msg = `🧾 SUN PRODUCT (Memo)\n`;
+            let msg = `☀️ SUN PRODUCT\n`;
             msg += `দোকান: ${order.shop}\n`;
             if(order.phone) msg += `মোবাইল: ${order.phone}\n`;
             msg += `--------------------------\n`;
@@ -694,7 +695,7 @@
             msg += `মোট বিল: ৳${order.total}\n`;
             msg += `জমা: ৳${order.collected}\n`;
             msg += `বাকি: ৳${order.due}\n`;
-            msg += `ধন্যবাদ, আবার আসবেন!`;
+            msg += `আমাদের সাথে থাকার জন্য ধন্যবাদ।`;
             return encodeURIComponent(msg);
         }
 
