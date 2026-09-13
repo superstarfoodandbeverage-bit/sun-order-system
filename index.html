@@ -1,517 +1,304 @@
-<!DOCTYPE html>
+      <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SUN - SR Market Order System</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SheetJS for Excel Backup -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      #print-area, #print-area * {
-        visibility: visible;
-      }
-      #print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Star Food & Beverage - Order System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body * { visibility: hidden; }
+            #receipt-print-area, #receipt-print-area * { visibility: visible; }
+            #receipt-print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 58mm;
+                font-family: monospace;
+                font-size: 12px;
+                padding: 5px;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800 pb-10">
+<body class="bg-gray-100 min-h-screen text-gray-800">
 
-  <!-- Header Bar -->
-  <header class="bg-blue-600 text-white p-4 flex justify-between items-center shadow-md">
-    <div class="flex items-center space-x-2">
-      <div class="text-amber-400 text-3xl font-bold flex items-center">
-        ☀️ <span class="text-white text-xl ml-1 font-extrabold tracking-wide">SUN</span>
-      </div>
-    </div>
-    <button onclick="alert('ম্যানেজার ড্যাশবোর্ডে স্বাগতম')" class="bg-amber-400 text-slate-900 font-bold px-4 py-2 rounded-md hover:bg-amber-300 transition text-sm">
-      Manager Mode
-    </button>
-  </header>
-
-  <!-- Live Date & Time -->
-  <div class="max-w-md mx-auto mt-4 px-4">
-    <div class="bg-white rounded-2xl p-3 text-center shadow-sm border border-blue-200">
-      <div id="clock" class="text-blue-600 text-2xl font-bold">00:00:00 PM</div>
-      <div id="date" class="text-slate-500 text-xs mt-1">তারিখ লোড হচ্ছে...</div>
-    </div>
-  </div>
-
-  <!-- Navigation Tabs -->
-  <div class="max-w-md mx-auto mt-4 px-4">
-    <div class="grid grid-cols-2 gap-2">
-      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="bg-blue-600 text-white font-semibold py-2 rounded-lg shadow text-sm">Dashboard</button>
-      <button onclick="switchTab('order')" id="tab-order" class="bg-white text-slate-700 font-semibold py-2 rounded-lg shadow text-sm">SR Order Entry</button>
-    </div>
-  </div>
-
-  <!-- Main Content Area -->
-  <main class="max-w-md mx-auto p-4">
-    
-    <!-- DASHBOARD VIEW -->
-    <div id="dashboard-view" class="space-y-3">
-      <div class="grid grid-cols-2 gap-3">
-        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
-          <div class="text-xs text-slate-500 font-medium">💰 Total Sales</div>
-          <div class="text-lg font-bold text-slate-800 mt-1" id="dash-sales">৳ 0</div>
+    <!-- Top Bar / Daily Hadith -->
+    <header class="bg-blue-600 text-white p-3 shadow-md no-print">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="font-bold text-lg">Super Star F&B Order App</h1>
+            <button onclick="toggleAdminMode()" class="bg-blue-700 px-3 py-1 rounded text-sm font-semibold">অ্যাডমিন মোড</button>
         </div>
-        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
-          <div class="text-xs text-slate-500 font-medium">💵 Total Collected</div>
-          <div class="text-lg font-bold text-slate-800 mt-1" id="dash-collected">৳ 0</div>
+        <div class="max-w-4xl mx-auto mt-2 bg-blue-700 p-2 rounded text-xs italic text-center" id="daily-hadith">
+            <!-- Daily Hadith loads here -->
         </div>
-        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
-          <div class="text-xs text-slate-500 font-medium">📌 Total Due</div>
-          <div class="text-lg font-bold text-slate-800 mt-1" id="dash-due">৳ 0</div>
-        </div>
-        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
-          <div class="text-xs text-slate-500 font-medium">📦 Total Prod</div>
-          <div class="text-lg font-bold text-slate-800 mt-1">2055</div>
-        </div>
-      </div>
+    </header>
 
-      <!-- Excel Download Button -->
-      <button onclick="exportToExcel()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow flex items-center justify-center space-x-2 mt-4">
-        <span>📊</span>
-        <span>Download Excel Backup (All Data)</span>
-      </button>
-
-      <!-- Live Orders List -->
-      <div class="mt-6">
-        <h3 class="font-bold text-slate-700 mb-2 text-sm">সাম্প্রতিক ইনভয়েসসমূহ:</h3>
-        <div id="order-list" class="space-y-3"></div>
-      </div>
-    </div>
-
-    <!-- SR ORDER ENTRY VIEW -->
-    <div id="order-view" class="hidden space-y-4">
-      
-      <!-- Customer Info -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border space-y-2">
-        <h2 class="text-base font-bold text-blue-600">১. কাস্টমার / দোকানের তথ্য</h2>
-        <input type="text" id="shopName" class="w-full border p-2 rounded-lg text-sm focus:outline-blue-500" placeholder="দোকানের নাম লিখুন">
-        <input type="text" id="phoneNum" class="w-full border p-2 rounded-lg text-sm focus:outline-blue-500" placeholder="মোবাইল নম্বর (WhatsApp / SMS এর জন্য)">
-      </div>
-
-      <!-- Item Selection Form -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border space-y-3">
-        <h2 class="text-base font-bold text-blue-600">২. আইটেম যোগ করুন</h2>
+    <main class="max-w-4xl mx-auto p-4 mb-12">
         
-        <div>
-          <label class="block text-xs text-slate-600 mb-1">প্রোডাক্ট সিলেক্ট করুন</label>
-          <select id="productSelect" onchange="updateProductDetails()" class="w-full border p-2 rounded-lg text-sm bg-white focus:outline-blue-500">
-            <option value="">-- প্রোডাক্ট বেছে নিন --</option>
-          </select>
-        </div>
+        <!-- Shop & SR Info Section -->
+        <section class="bg-white p-4 rounded-lg shadow mb-4 no-print">
+            <h2 class="font-bold text-gray-700 mb-2 border-b pb-1">দোকানের তথ্য</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600">দোকানের নাম:</label>
+                    <input type="text" id="shop-name" list="saved-shops" placeholder="দোকানের নাম লিখুন বা সিলেক্ট করুন" class="w-full border p-2 rounded mt-1" oninput="saveShopName()">
+                    <datalist id="saved-shops"></datalist>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600">প্রোপ্রাইটর / মালিকের নাম:</label>
+                    <input type="text" id="owner-name" placeholder="মালিকের নাম" class="w-full border p-2 rounded mt-1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600">মোবাইল নম্বর:</label>
+                    <input type="tel" id="shop-phone" placeholder="ফোন নম্বর" class="w-full border p-2 rounded mt-1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600">ঠিকানা:</label>
+                    <input type="text" id="shop-address" placeholder="বাজার / এলাকা" class="w-full border p-2 rounded mt-1">
+                </div>
+            </div>
+        </section>
 
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-xs text-slate-600 mb-1">ইউনিট (একক)</label>
-            <select id="unitSelect" onchange="calculateItemTotal()" class="w-full border p-2 rounded-lg text-sm bg-white focus:outline-blue-500">
-              <option value="কার্টুন">কার্টুন</option>
-              <option value="পিস">পিস</option>
-              <option value="ডজন">ডজন</option>
-              <option value="বস্তা">বস্তা</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-slate-600 mb-1">পরিমাণ (Qty)</label>
-            <input type="number" id="itemQty" oninput="calculateItemTotal()" min="1" class="w-full border p-2 rounded-lg text-sm focus:outline-blue-500" placeholder="0">
-          </div>
-        </div>
+        <!-- Admin Product Management (Hidden by default) -->
+        <section id="admin-section" class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg shadow mb-4 hidden no-print">
+            <h2 class="font-bold text-yellow-800 mb-2 border-b border-yellow-300 pb-1">➕ নতুন পণ্য যোগ করুন (অ্যাডমিন প্যানেল)</h2>
+            <div class="flex gap-2 flex-wrap">
+                <input type="text" id="new-item-name" placeholder="পণ্যের নাম" class="border p-2 rounded flex-1 min-w-[150px]">
+                <input type="number" id="new-item-price" placeholder="রেট (টাকা)" class="border p-2 rounded w-32">
+                <button onclick="addNewProduct()" class="bg-green-600 text-white px-4 py-2 rounded font-semibold">যোগ করুন</button>
+            </div>
+        </section>
 
-        <!-- Gift / Free Checkbox -->
-        <div class="flex items-center space-x-2 pt-1">
-          <input type="checkbox" id="isFreeGift" onchange="calculateItemTotal()" class="w-4 h-4 text-blue-600 rounded">
-          <label for="isFreeGift" class="text-xs font-bold text-green-600">🎁 এটি ফ্রি / গিফট আইটেম (টাকা ০ হবে)</label>
-        </div>
+        <!-- Product Selection Section -->
+        <section class="bg-white p-4 rounded-lg shadow mb-4 no-print">
+            <h2 class="font-bold text-gray-700 mb-2 border-b pb-1">পণ্যের তালিকা ও পরিমাণ</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 text-sm">
+                            <th class="p-2 border">পণ্যের নাম</th>
+                            <th class="p-2 border">রেট (৳)</th>
+                            <th class="p-2 border">পরিমাণ (কার্টুন/পিস)</th>
+                            <th class="p-2 border">মোট (৳)</th>
+                            <th class="p-2 border text-center">অ্যাকশন</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-list-body">
+                        <!-- Dynamic items will load here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-        <div>
-          <label class="block text-xs text-slate-600 mb-1">মোট টাকা (Auto)</label>
-          <input type="number" id="itemTotal" class="w-full border p-2 rounded-lg text-sm bg-slate-100 font-bold text-blue-600" placeholder="0.00">
-        </div>
-
-        <button type="button" onclick="addToCart()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2 rounded-lg shadow text-sm">
-          + কার্টে আইটেম যোগ করুন
-        </button>
-      </div>
-
-      <!-- Cart Item List -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border">
-        <h2 class="text-base font-bold text-slate-700 mb-2">🛒 কার্ট তালিকা (ইনভয়েস আইটেম)</h2>
-        <div id="cartItems" class="space-y-2 mb-3">
-          <p class="text-xs text-slate-400 text-center py-2">কোনো আইটেম যোগ করা হয়নি</p>
-        </div>
-        
-        <div class="border-t pt-2 space-y-2">
-          <div class="flex justify-between font-bold text-slate-800 text-sm">
-            <span>সর্বমোট বিল:</span>
-            <span id="cartGrandTotal">৳ 0</span>
-          </div>
-          
-          <div>
-            <label class="block text-xs text-slate-600 mb-1">নগদ জমা (Collected Amount)</label>
-            <input type="number" id="paidAmount" class="w-full border p-2 rounded-lg text-sm focus:outline-blue-500" placeholder="0.00">
-          </div>
-
-          <button onclick="submitInvoice()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow text-sm">
-            ✓ সম্পূর্ণ ইনভয়েস সাবমিট করুন
-          </button>
-        </div>
-      </div>
-
-    </div>
-
-  </main>
-
-  <!-- Thermal Print Receipt Template -->
-  <div id="print-area" class="p-4 bg-white hidden">
-    <div class="text-center font-bold text-lg">☀️ SUN PRODUCT</div>
-    <div class="text-center text-xs mb-2">ইনকাম এখন হাতের মুঠোয়</div>
-    <div id="print-details" class="text-xs space-y-2"></div>
-  </div>
-
-  <script>
-    const presetProducts = [
-      { id: 1, name: 'সয়াবিন তেল ১ লিটার', unitPrices: { 'কার্টুন': 2100, 'পিস': 175, 'ডজন': 2100, 'বস্তা': 2100 } },
-      { id: 2, name: 'মিনিকেট চাল ৫০ কেজি', unitPrices: { 'কার্টুন': 3400, 'পিস': 3400, 'ডজন': 3400, 'বস্তা': 3400 } },
-      { id: 3, name: 'ডিটারজেন্ট পাউডার ৫০০ গ্রাম', unitPrices: { 'কার্টুন': 720, 'পিস': 60, 'ডজন': 720, 'বস্তা': 720 } },
-      { id: 4, name: 'বিস্কুট প্যাক', unitPrices: { 'কার্টুন': 540, 'পিস': 45, 'ডজন': 540, 'বস্তা': 540 } }
-    ];
-
-    let currentCart = [];
-    let invoices = [];
-    let selectedProduct = null;
-    let invoiceCounter = 1000;
-
-    function loadProducts() {
-      const select = document.getElementById('productSelect');
-      presetProducts.forEach(p => {
-        const option = document.createElement('option');
-        option.value = p.id;
-        option.textContent = p.name;
-        select.appendChild(option);
-      });
-    }
-
-    function updateProductDetails() {
-      const pId = document.getElementById('productSelect').value;
-      selectedProduct = presetProducts.find(p => p.id == pId);
-      calculateItemTotal();
-    }
-
-    function calculateItemTotal() {
-      const qty = parseFloat(document.getElementById('itemQty').value) || 0;
-      const unit = document.getElementById('unitSelect').value;
-      const isFree = document.getElementById('isFreeGift').checked;
-
-      if (isFree) {
-        document.getElementById('itemTotal').value = 0;
-        return;
-      }
-
-      if (selectedProduct && qty > 0) {
-        const price = selectedProduct.unitPrices[unit] || 0;
-        document.getElementById('itemTotal').value = price * qty;
-      } else {
-        document.getElementById('itemTotal').value = 0;
-      }
-    }
-
-    function addToCart() {
-      const qty = parseFloat(document.getElementById('itemQty').value);
-      const unit = document.getElementById('unitSelect').value;
-      const isFree = document.getElementById('isFreeGift').checked;
-      const total = isFree ? 0 : parseFloat(document.getElementById('itemTotal').value);
-
-      if (!selectedProduct || !qty || qty <= 0) {
-        alert("দয়া করে প্রোডাক্ট এবং সঠিক পরিমাণ সিলেক্ট করুন!");
-        return;
-      }
-
-      currentCart.push({
-        productName: selectedProduct.name + (isFree ? ' (🎁 FREE GIFT)' : ''),
-        unit: unit,
-        mrp: isFree ? 0 : (selectedProduct.unitPrices[unit] || 0),
-        qty: qty,
-        total: total,
-        isFree: isFree
-      });
-
-      renderCart();
-      document.getElementById('productSelect').value = '';
-      document.getElementById('itemQty').value = '';
-      document.getElementById('itemTotal').value = '';
-      document.getElementById('isFreeGift').checked = false;
-      selectedProduct = null;
-    }
-
-    function renderCart() {
-      const container = document.getElementById('cartItems');
-      if(currentCart.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">কোনো আইটেম যোগ করা হয়নি</p>`;
-        document.getElementById('cartGrandTotal').innerText = `৳ 0`;
-        return;
-      }
-
-      container.innerHTML = '';
-      let grandTotal = 0;
-      currentCart.forEach((item, index) => {
-        grandTotal += item.total;
-        container.innerHTML += `
-          <div class="flex justify-between items-center text-xs ${item.isFree ? 'bg-green-50 border-green-200' : 'bg-slate-50'} p-2 rounded border">
+        <!-- Order Summary & Print Button -->
+        <section class="bg-white p-4 rounded-lg shadow flex justify-between items-center no-print">
             <div>
-              <div class="font-bold text-slate-800">${item.productName}</div>
-              <div class="text-slate-500">${item.qty} ${item.unit} ${item.isFree ? '' : 'x ৳' + item.mrp}</div>
+                <span class="text-gray-600">সর্বমোট পরিমাণ: </span>
+                <span id="grand-total" class="text-xl font-bold text-blue-600">৳0.00</span>
             </div>
-            <div class="flex items-center space-x-2">
-              <span class="font-bold ${item.isFree ? 'text-green-600' : 'text-blue-600'}">${item.isFree ? 'FREE' : '৳' + item.total}</span>
-              <button onclick="removeFromCart(${index})" class="text-red-500 font-bold hover:bg-red-100 px-1 rounded">✕</button>
+            <button onclick="printReceipt()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow">
+                🖨️ থার্মাল রিসিপ্ট প্রিন্ট করুন
+            </button>
+        </section>
+
+        <!-- Hidden Thermal Receipt Template for Printing -->
+        <div id="receipt-print-area" class="hidden thermal-receipt p-2 bg-white text-black">
+            <!-- Large Header & Slogan -->
+            <div class="text-center font-black text-2xl uppercase tracking-wider mb-0" style="font-size: 22px; font-weight: 900;">
+                SUN PRODUCT
             </div>
-          </div>
-        `;
-      });
-      document.getElementById('cartGrandTotal').innerText = `৳ ${grandTotal}`;
-    }
-
-    function removeFromCart(index) {
-      currentCart.splice(index, 1);
-      renderCart();
-    }
-
-    function submitInvoice() {
-      const shopName = document.getElementById('shopName').value.trim();
-      const phoneNum = document.getElementById('phoneNum').value.trim();
-      const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
-
-      if (!shopName) {
-        alert("দয়া করে দোকানের নাম লিখুন!");
-        return;
-      }
-      if (currentCart.length === 0) {
-        alert("আইটেম যোগ করুন!");
-        return;
-      }
-
-      const totalBill = currentCart.reduce((sum, item) => sum + item.total, 0);
-      invoiceCounter++;
-      const invoiceId = 'INV-' + invoiceCounter;
-      const date = document.getElementById('date').innerText;
-
-      const invoice = {
-        id: invoiceId,
-        shop: shopName,
-        phone: phoneNum,
-        items: [...currentCart],
-        totalBill: totalBill,
-        paid: paid,
-        due: totalBill - paid,
-        date: date
-      };
-
-      invoices.push(invoice);
-      updateDashboard();
-
-      currentCart = [];
-      renderCart();
-      document.getElementById('shopName').value = '';
-      document.getElementById('phoneNum').value = '';
-      document.getElementById('paidAmount').value = '';
-
-      alert(`ইনভয়েস ${invoiceId} তৈরি করা হয়েছে!`);
-      switchTab('dashboard');
-    }
-
-    function updateDashboard() {
-      let totalSales = 0, totalCollected = 0, totalDue = 0;
-      const listContainer = document.getElementById('order-list');
-      listContainer.innerHTML = '';
-
-      invoices.forEach((inv, index) => {
-        totalSales += inv.totalBill;
-        totalCollected += inv.paid;
-        totalDue += inv.due;
-
-        let itemsHtml = inv.items.map(i => `<li class="text-xs text-slate-600">${i.productName} (${i.qty} ${i.unit}) - ${i.isFree ? '🎁 FREE' : '৳' + i.total}</li>`).join('');
-
-        listContainer.innerHTML += `
-          <div class="bg-white p-3 rounded-xl border shadow-sm space-y-2">
-            <div class="flex justify-between items-center border-b pb-1">
-              <div>
-                <span class="font-bold text-slate-800 text-sm">${inv.shop}</span>
-                <span class="text-[10px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded ml-1">${inv.id}</span>
-              </div>
-              <span class="text-[11px] text-slate-400">${inv.date}</span>
-            </div>
-            <ul class="list-disc list-inside bg-slate-50 p-2 rounded">
-              ${itemsHtml}
-            </ul>
-            <div class="flex justify-between items-center text-xs pt-1">
-              <div>মোট: <strong class="text-blue-600">৳${inv.totalBill}</strong></div>
-              <div>জমা: <strong class="text-green-600">৳${inv.paid}</strong> | বকেয়া: <strong class="text-red-500">৳${inv.due}</strong></div>
+            <div class="text-center text-[10px] italic mb-2 font-normal" style="font-size: 10px;">
+                ইনকাম এখন হাতের মুঠোয়
             </div>
             
-            <div class="grid grid-cols-4 gap-1 pt-2 border-t">
-              <button onclick="shareWhatsApp(${index})" class="bg-green-500 hover:bg-green-600 text-white font-bold py-1.5 px-1 rounded text-[11px] flex items-center justify-center">💬 WhatsApp</button>
-              <button onclick="shareImo(${index})" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-1 rounded text-[11px] flex items-center justify-center">📱 imo</button>
-              <button onclick="sendSMS(${index})" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 px-1 rounded text-[11px] flex items-center justify-center">✉️ SMS</button>
-              <button onclick="printInvoice(${index})" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-1.5 px-1 rounded text-[11px] flex items-center justify-center">🖨️ Print</button>
+            <div class="text-center text-xs font-bold border-t border-b border-black py-0.5 mb-2">
+                SUPER STAR FOOD & BEVERAGE
             </div>
-          </div>
-        `;
-      });
 
-      document.getElementById('dash-sales').innerText = `৳ ${totalSales}`;
-      document.getElementById('dash-collected').innerText = `৳ ${totalCollected}`;
-      document.getElementById('dash-due').innerText = `৳ ${totalDue}`;
-    }
+            <div class="border-b border-dashed border-black pb-1 text-xs mb-2">
+                <div>তারিখ: <span id="r-date"></span></div>
+                <div>দোকান: <span id="r-shop"></span></div>
+                <div>মালিক: <span id="r-owner"></span></div>
+                <div>মোবাইল: <span id="r-phone"></span></div>
+                <div>ঠিকানা: <span id="r-address"></span></div>
+            </div>
 
-    function generateInvoiceText(inv) {
-      let text = `Sun product\n`;
-      text += `ইনকাম এখন হাতের মুঠোয়\n\n`;
-      text += `প্রিয় ${inv.shop},\n`;
-      text += `আপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে। নিচে বিস্তারিত বিবরণ দেওয়া হলো:\n\n`;
-      text += `ইনভয়েস নম্বর: ${inv.id}\n`;
-      text += `তারিখ: ${inv.date}\n\n`;
-      text += `পণ্যের বিবরণ:\n`;
-      
-      inv.items.forEach(i => {
-        text += `• ${i.productName} (${i.qty} ${i.unit}) - ${i.isFree ? 'FREE GIFT' : '৳' + i.total}\n`;
-      });
-      
-      text += `\nমোট বিল: ৳${inv.totalBill}\n`;
-      text += `জমা টাকা: ৳${inv.paid}\n`;
-      text += `বকেয়া টাকা: ৳${inv.due}\n\n`;
-      text += `আমাদের সাথে থাকার জন্য ধন্যবাদ! ☀️`;
-      
-      return encodeURIComponent(text);
-    }
+            <table class="w-full text-xs mb-2">
+                <thead>
+                    <tr class="border-b border-black">
+                        <th class="text-left">পণ্য</th>
+                        <th class="text-center">পরিমাণ</th>
+                        <th class="text-right">মোট</th>
+                    </tr>
+                </thead>
+                <tbody id="r-items-body">
+                    <!-- Receipt items -->
+                </tbody>
+            </table>
 
-    function shareWhatsApp(index) {
-      const inv = invoices[index];
-      const text = generateInvoiceText(inv);
-      const url = inv.phone ? `https://wa.me/${inv.phone}?text=${text}` : `https://wa.me/?text=${text}`;
-      window.open(url, '_blank');
-    }
+            <div class="border-t border-dashed border-black pt-1 text-right font-bold text-sm">
+                সর্বমোট: ৳<span id="r-grand-total">0.00</span>
+            </div>
 
-    function shareImo(index) {
-      const inv = invoices[index];
-      const text = generateInvoiceText(inv);
-      if (navigator.share) {
-        navigator.share({ title: 'SUN Invoice', text: decodeURIComponent(text) });
-      } else {
-        alert("imo অ্যাপে শেয়ার করতে টেক্সট কপি করা হয়েছে:\n\n" + decodeURIComponent(text));
-      }
-    }
-
-    function sendSMS(index) {
-      const inv = invoices[index];
-      const text = generateInvoiceText(inv);
-      const url = inv.phone ? `sms:${inv.phone}?body=${text}` : `sms:?body=${text}`;
-      window.open(url, '_blank');
-    }
-
-    function printInvoice(index) {
-      const inv = invoices[index];
-      const printArea = document.getElementById('print-area');
-      const details = document.getElementById('print-details');
-
-      let itemsHtml = inv.items.map(i => `
-        <div style="display:flex; justify-content:space-between; font-size:12px;">
-          <span>${i.productName} (${i.qty} ${i.unit})</span>
-          <span>${i.isFree ? 'FREE' : '৳' + i.total}</span>
+            <div class="text-center text-[10px] mt-4 border-t border-black pt-1">
+                ধন্যবাদ, আবার আসবেন!<br>Super Star F&B System
+            </div>
         </div>
-      `).join('');
 
-      details.innerHTML = `
-        <p><strong>প্রিয়:</strong> ${inv.shop}</p>
-        <p><strong>ইনভয়েস নম্বর:</strong> ${inv.id}</p>
-        <p><strong>তারিখ:</strong> ${inv.date}</p>
-        <hr style="margin:5px 0; border-top: 1px dashed #000;" />
-        <p style="font-weight:bold; margin-bottom: 3px;">পণ্যের বিবরণ:</p>
-        ${itemsHtml}
-        <hr style="margin:5px 0; border-top: 1px dashed #000;" />
-        <p><strong>মোট বিল:</strong> ৳${inv.totalBill}</p>
-        <p><strong>জমা টাকা:</strong> ৳${inv.paid}</p>
-        <p><strong>বকেয়া টাকা:</strong> ৳${inv.due}</p>
-        <br />
-        <p style="text-align:center; font-size:10px;">আমাদের সাথে থাকার জন্য ধন্যবাদ! ☀️</p>
-      `;
+    </main>
 
-      printArea.classList.remove('hidden');
-      window.print();
-      printArea.classList.add('hidden');
-    }
+    <script>
+        // Daily Hadith Array (Auto rotates daily)
+        const hadiths = [
+            "আহমাদ ও তিরমিযী: 'তোমাদের মধ্যে সেই ব্যক্তি উত্তম, যার চরিত্র সবচেয়ে সুন্দর।'",
+            "সহীহ বুখারী: 'আল্লাহ তাআলা ঐ ব্যক্তির প্রতি দয়া করেন যে বিক্রয় করার সময়, ক্রয় করার সময় এবং পাওনা তাগাদা করার সময় নম্রতা প্রদর্শন করে।'",
+            "সহীহ মুসলিম: 'যে ব্যক্তি মানুষের প্রতি দয়া করে না, আল্লাহ তাআলাও তার প্রতি দয়া করেন না।'",
+            "তিরমিযী: 'সত ও বিশ্বস্ত ব্যবসায়ী নবীগণ, সিদ্দিকগণ ও শহীদগণের সাথে থাকবে।'",
+            "সহীহ বুখারী: 'আমলের ফলাফল নিয়তের উপর নির্ভরশীল।'",
+            "সুনান ইবন মাজাহ: 'জ্ঞান অর্জন করা প্রত্যেক মুসলমানের উপর ফরজ।'",
+            "রিয়াদুস সালেহীন: 'মুসলমান হলো সেই ব্যক্তি, যার জবান ও হাত থেকে অন্য মুসলমান নিরাপদ থাকে।'"
+        ];
 
-    function exportToExcel() {
-      if(invoices.length === 0) {
-        alert("ডাউনলোড করার মতো কোনো ডেটা নেই!");
-        return;
-      }
-      const flatData = [];
-      invoices.forEach(inv => {
-        inv.items.forEach(item => {
-          flatData.push({
-            "ইনভয়েস আইডি": inv.id,
-            "তারিখ": inv.date,
-            "দোকানের নাম": inv.shop,
-            "মোবাইল": inv.phone,
-            "প্রোডাক্ট": item.productName,
-            "পরিমাণ": item.qty,
-            "ইউনিট": item.unit,
-            "মোট টাকা": item.total,
-            "জমা টাকা": inv.paid,
-            "বকেয়া টাকা": inv.due
-          });
-        });
-      });
-      const ws = XLSX.utils.json_to_sheet(flatData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Invoices");
-      XLSX.writeFile(wb, "SUN_Product_Orders.xlsx");
-    }
+        function loadDailyHadith() {
+            const todayIndex = new Date().getDate() % hadiths.length;
+            document.getElementById('daily-hadith').innerText = "💡 আজকের হাদিস: " + hadiths[todayIndex];
+        }
+        loadDailyHadith();
 
-    function updateClock() {
-      const now = new Date();
-      let hours = now.getHours();
-      let minutes = now.getMinutes();
-      let seconds = now.getSeconds();
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12 || 12;
-      minutes = minutes < 10 ? '0' + minutes : minutes;
-      seconds = seconds < 10 ? '0' + seconds : seconds;
-      
-      document.getElementById('clock').innerText = `${hours}:${minutes}:${seconds} ${ampm}`;
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      document.getElementById('date').innerText = now.toLocaleDateString('bn-BD', options);
-    }
+        // Default / Custom Products Management
+        let products = JSON.parse(localStorage.getItem('ssf_products')) || [
+            { id: 1, name: 'মিনারেল ওয়াটার ৫০০মিঃলিঃ (কেস)', price: 240 },
+            { id: 2, name: 'মিনারেল ওয়াটার ১লিটার (কেস)', price: 300 },
+            { id: 3, name: 'জুস ২৫০মিঃলিঃ (কার্টুন)', price: 450 }
+        ];
 
-    function switchTab(tab) {
-      if(tab === 'dashboard') {
-        document.getElementById('dashboard-view').classList.remove('hidden');
-        document.getElementById('order-view').classList.add('hidden');
-        document.getElementById('tab-dashboard').className = "bg-blue-600 text-white font-semibold py-2 rounded-lg shadow text-sm";
-        document.getElementById('tab-order').className = "bg-white text-slate-700 font-semibold py-2 rounded-lg shadow text-sm";
-      } else {
-        document.getElementById('dashboard-view').classList.add('hidden');
-        document.getElementById('order-view').classList.remove('hidden');
-        document.getElementById('tab-order').className = "bg-blue-600 text-white font-semibold py-2 rounded-lg shadow text-sm";
-        document.getElementById('tab-dashboard').className = "bg-white text-slate-700 font-semibold py-2 rounded-lg shadow text-sm";
-      }
-    }
+        function saveProducts() {
+            localStorage.setItem('ssf_products', JSON.stringify(products));
+        }
 
-    loadProducts();
-    setInterval(updateClock, 1000);
-    updateClock();
-  </script>
+        function renderProducts() {
+            const tbody = document.getElementById('product-list-body');
+            tbody.innerHTML = '';
+            products.forEach((p, index) => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50 text-sm">
+                        <td class="p-2 border font-medium">${p.name}</td>
+                        <td class="p-2 border">৳${p.price}</td>
+                        <td class="p-2 border">
+                            <input type="number" min="0" value="0" data-index="${index}" class="w-20 border p-1 rounded text-center qty-input" oninput="calculateTotal()">
+                        </td>
+                        <td class="p-2 border font-semibold item-total">৳0</td>
+                        <td class="p-2 border text-center">
+                            <button onclick="deleteProduct(${p.id})" class="text-red-500 hover:text-red-700 text-xs bg-red-50 px-2 py-1 rounded no-print">ডিলিট</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function addNewProduct() {
+            const name = document.getElementById('new-item-name').value.trim();
+            const price = parseFloat(document.getElementById('new-item-price').value);
+            if(!name || isNaN(price)) {
+                alert('দয়া করে সঠিক পণ্যের নাম এবং রেট দিন।');
+                return;
+            }
+            products.push({ id: Date.now(), name, price });
+            saveProducts();
+            renderProducts();
+            document.getElementById('new-item-name').value = '';
+            document.getElementById('new-item-price').value = '';
+        }
+
+        function deleteProduct(id) {
+            if(confirm('আপনি কি এই পণ্যটি তালিকা থেকে মুছে ফেলতে চান?')) {
+                products = products.filter(p => p.id !== id);
+                saveProducts();
+                renderProducts();
+                calculateTotal();
+            }
+        }
+
+        function toggleAdminMode() {
+            const adminSec = document.getElementById('admin-section');
+            adminSec.classList.toggle('hidden');
+        }
+
+        // Shop Auto-save / Load Feature
+        function saveShopName() {
+            const shopName = document.getElementById('shop-name').value;
+            let savedShops = JSON.parse(localStorage.getItem('ssf_saved_shops')) || [];
+            if(shopName && !savedShops.includes(shopName)) {
+                savedShops.push(shopName);
+                localStorage.setItem('ssf_saved_shops', JSON.stringify(savedShops));
+                updateShopDatalist();
+            }
+        }
+
+        function updateShopDatalist() {
+            const datalist = document.getElementById('saved-shops');
+            let savedShops = JSON.parse(localStorage.getItem('ssf_saved_shops')) || [];
+            datalist.innerHTML = '';
+            savedShops.forEach(shop => {
+                datalist.innerHTML += `<option value="${shop}">`;
+            });
+        }
+        updateShopDatalist();
+
+        // Calculate Totals
+        function calculateTotal() {
+            const rows = document.querySelectorAll('#product-list-body tr');
+            let grandTotal = 0;
+            rows.forEach((row, index) => {
+                const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                const price = products[index].price;
+                const total = qty * price;
+                row.querySelector('.item-total').innerText = '৳' + total;
+                grandTotal += total;
+            });
+            document.getElementById('grand-total').innerText = '৳' + grandTotal;
+        }
+
+        // Print Thermal Receipt
+        function printReceipt() {
+            document.getElementById('r-date').innerText = new Date().toLocaleDateString('bn-BD');
+            document.getElementById('r-shop').innerText = document.getElementById('shop-name').value || 'সাধারণ ক্রেতা';
+            document.getElementById('r-owner').innerText = document.getElementById('owner-name').value || '-';
+            document.getElementById('r-phone').innerText = document.getElementById('shop-phone').value || '-';
+            document.getElementById('r-address').innerText = document.getElementById('shop-address').value || '-';
+
+            const rItemsBody = document.getElementById('r-items-body');
+            rItemsBody.innerHTML = '';
+            let grandTotal = 0;
+
+            const rows = document.querySelectorAll('#product-list-body tr');
+            rows.forEach((row, index) => {
+                const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                if(qty > 0) {
+                    const p = products[index];
+                    const total = qty * p.price;
+                    grandTotal += total;
+                    rItemsBody.innerHTML += `
+                        <tr>
+                            <td>${p.name}</td>
+                            <td class="text-center">${qty}</td>
+                            <td class="text-right">৳${total}</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            document.getElementById('r-grand-total').innerText = grandTotal;
+
+            const printArea = document.getElementById('receipt-print-area');
+            printArea.classList.remove('hidden');
+            window.print();
+            printArea.classList.add('hidden');
+        }
+
+        renderProducts();
+    </script>
 </body>
 </html>
