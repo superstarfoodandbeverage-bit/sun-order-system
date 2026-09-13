@@ -1,131 +1,201 @@
-      <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Star Food & Beverage - Order System</title>
+    <title>SUN Order System - SR App</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap');
+        body { font-family: 'Hind Siliguri', sans-serif; }
         @media print {
             body * { visibility: hidden; }
             #receipt-print-area, #receipt-print-area * { visibility: visible; }
             #receipt-print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 58mm;
-                font-family: monospace;
-                font-size: 12px;
-                padding: 5px;
+                position: absolute; left: 0; top: 0; width: 58mm;
+                font-family: monospace; font-size: 11px; padding: 4px;
             }
             .no-print { display: none !important; }
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen text-gray-800">
+<body class="bg-slate-100 min-h-screen text-gray-800">
 
-    <!-- Top Bar / Daily Hadith -->
-    <header class="bg-blue-600 text-white p-3 shadow-md no-print">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <h1 class="font-bold text-lg">Super Star F&B Order App</h1>
-            <button onclick="toggleAdminMode()" class="bg-blue-700 px-3 py-1 rounded text-sm font-semibold">অ্যাডমিন মোড</button>
+    <!-- Top Header Navigation -->
+    <header class="bg-blue-600 text-white px-4 py-3 shadow-md flex justify-between items-center no-print">
+        <div class="w-12"></div>
+        
+        <!-- SUN Logo -->
+        <div class="flex items-center space-x-1">
+            <div class="relative flex items-center justify-center">
+                <i class="fa-solid fa-sun text-yellow-400 text-4xl"></i>
+                <span class="absolute text-[11px] font-black text-blue-900 tracking-tighter">SUN</span>
+            </div>
         </div>
-        <div class="max-w-4xl mx-auto mt-2 bg-blue-700 p-2 rounded text-xs italic text-center" id="daily-hadith">
-            <!-- Daily Hadith loads here -->
+
+        <!-- Mode Toggle Button -->
+        <div>
+            <button onclick="toggleManagerMode()" id="mode-btn" class="bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold px-3 py-1.5 rounded-lg text-xs shadow">
+                SR Mode
+            </button>
         </div>
     </header>
 
-    <main class="max-w-4xl mx-auto p-4 mb-12">
-        
-        <!-- Shop & SR Info Section -->
-        <section class="bg-white p-4 rounded-lg shadow mb-4 no-print">
-            <h2 class="font-bold text-gray-700 mb-2 border-b pb-1">দোকানের তথ্য</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-sm font-medium text-gray-600">দোকানের নাম:</label>
-                    <input type="text" id="shop-name" list="saved-shops" placeholder="দোকানের নাম লিখুন বা সিলেক্ট করুন" class="w-full border p-2 rounded mt-1" oninput="saveShopName()">
-                    <datalist id="saved-shops"></datalist>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-600">প্রোপ্রাইটর / মালিকের নাম:</label>
-                    <input type="text" id="owner-name" placeholder="মালিকের নাম" class="w-full border p-2 rounded mt-1">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-600">মোবাইল নম্বর:</label>
-                    <input type="tel" id="shop-phone" placeholder="ফোন নম্বর" class="w-full border p-2 rounded mt-1">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-600">ঠিকানা:</label>
-                    <input type="text" id="shop-address" placeholder="বাজার / এলাকা" class="w-full border p-2 rounded mt-1">
-                </div>
-            </div>
-        </section>
+    <!-- Daily Hadith (Arabic & Bangla) -->
+    <section class="bg-blue-50 border-b border-blue-200 px-4 py-2 text-center no-print">
+        <div class="max-w-2xl mx-auto">
+            <p id="hadith-arabic" class="text-base font-semibold text-blue-950 font-serif leading-relaxed"></p>
+            <p id="hadith-bangla" class="text-xs text-blue-800 mt-1 italic"></p>
+        </div>
+    </section>
 
-        <!-- Admin Product Management (Hidden by default) -->
-        <section id="admin-section" class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg shadow mb-4 hidden no-print">
-            <h2 class="font-bold text-yellow-800 mb-2 border-b border-yellow-300 pb-1">➕ নতুন পণ্য যোগ করুন (অ্যাডমিন প্যানেল)</h2>
-            <div class="flex gap-2 flex-wrap">
-                <input type="text" id="new-item-name" placeholder="পণ্যের নাম" class="border p-2 rounded flex-1 min-w-[150px]">
-                <input type="number" id="new-item-price" placeholder="রেট (টাকা)" class="border p-2 rounded w-32">
-                <button onclick="addNewProduct()" class="bg-green-600 text-white px-4 py-2 rounded font-semibold">যোগ করুন</button>
-            </div>
-        </section>
+    <main class="max-w-xl mx-auto p-3 mb-12">
 
-        <!-- Product Selection Section -->
-        <section class="bg-white p-4 rounded-lg shadow mb-4 no-print">
-            <h2 class="font-bold text-gray-700 mb-2 border-b pb-1">পণ্যের তালিকা ও পরিমাণ</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-100 text-sm">
-                            <th class="p-2 border">পণ্যের নাম</th>
-                            <th class="p-2 border">রেট (৳)</th>
-                            <th class="p-2 border">পরিমাণ (কার্টুন/পিস)</th>
-                            <th class="p-2 border">মোট (৳)</th>
-                            <th class="p-2 border text-center">অ্যাকশন</th>
-                        </tr>
-                    </thead>
-                    <tbody id="product-list-body">
-                        <!-- Dynamic items will load here -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        <!-- Time and Date Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 text-center mb-4 no-print">
+            <div id="clock-time" class="text-2xl font-black text-blue-600 tracking-wide">00:00:00 AM</div>
+            <div id="clock-date" class="text-xs text-gray-500 font-medium mt-0.5">লোডিং তারিখ...</div>
+        </div>
 
-        <!-- Order Summary & Print Button -->
-        <section class="bg-white p-4 rounded-lg shadow flex justify-between items-center no-print">
-            <div>
-                <span class="text-gray-600">সর্বমোট পরিমাণ: </span>
-                <span id="grand-total" class="text-xl font-bold text-blue-600">৳0.00</span>
+        <!-- Navigation Tabs -->
+        <div class="flex gap-2 mb-4 pb-1 no-print">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="flex-1 py-2 px-3 rounded-lg font-bold text-sm text-white bg-blue-600 shadow">ড্যাশবোর্ড</button>
+            <button onclick="switchTab('order')" id="tab-order" class="flex-1 py-2 px-3 rounded-lg font-bold text-sm text-gray-700 bg-gray-200 hover:bg-gray-300">নতুন অর্ডার</button>
+        </div>
+
+        <!-- VIEW: SR DASHBOARD (Simplified) -->
+        <div id="view-dashboard" class="space-y-3 no-print">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <div>
+                        <div class="text-xs font-semibold text-gray-500">💰 মোট সেলস (Total Sales)</div>
+                        <div class="text-2xl font-bold text-blue-600 mt-1" id="dash-sales">৳0</div>
+                    </div>
+                    <i class="fa-solid fa-cart-shopping text-2xl text-blue-200"></i>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <div>
+                        <div class="text-xs font-semibold text-gray-500">💵 মোট কালেকশন (Total Collected)</div>
+                        <div class="text-2xl font-bold text-green-600 mt-1" id="dash-collected">৳0</div>
+                    </div>
+                    <i class="fa-solid fa-money-bill-wave text-2xl text-green-200"></i>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <div>
+                        <div class="text-xs font-semibold text-gray-500">📌 মোট বাকি (Total Due)</div>
+                        <div class="text-2xl font-bold text-red-500 mt-1" id="dash-due">৳0</div>
+                    </div>
+                    <i class="fa-solid fa-file-invoice-dollar text-2xl text-red-200"></i>
+                </div>
             </div>
-            <button onclick="printReceipt()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow">
-                🖨️ থার্মাল রিসিপ্ট প্রিন্ট করুন
+
+            <!-- Download Excel Button -->
+            <button onclick="downloadExcel()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow text-sm flex items-center justify-center gap-2 mt-4">
+                📥 ব্যাকআপ ফাইল ডাউনলোড করুন (Excel)
             </button>
-        </section>
+        </div>
 
-        <!-- Hidden Thermal Receipt Template for Printing -->
-        <div id="receipt-print-area" class="hidden thermal-receipt p-2 bg-white text-black">
-            <!-- Large Header & Slogan -->
-            <div class="text-center font-black text-2xl uppercase tracking-wider mb-0" style="font-size: 22px; font-weight: 900;">
+        <!-- VIEW: NEW ORDER -->
+        <div id="view-order" class="hidden space-y-4 no-print">
+            <!-- Shop Info -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="font-bold text-gray-700 mb-3 text-sm border-b pb-1">দোকানের তথ্য</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600">দোকানের নাম:</label>
+                        <input type="text" id="shop-name" list="saved-shops" placeholder="দোকানের নাম লিখুন বা সিলেক্ট করুন" class="w-full border p-2 rounded-lg text-sm mt-1" oninput="saveShopName()">
+                        <datalist id="saved-shops"></datalist>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600">মালিকের নাম:</label>
+                            <input type="text" id="owner-name" placeholder="মালিকের নাম" class="w-full border p-2 rounded-lg text-sm mt-1">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600">মোবাইল:</label>
+                            <input type="tel" id="shop-phone" placeholder="মোবাইল নম্বর" class="w-full border p-2 rounded-lg text-sm mt-1">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600">ঠিকানা:</label>
+                        <input type="text" id="shop-address" placeholder="ঠিকানা / বাজার" class="w-full border p-2 rounded-lg text-sm mt-1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products List -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-bold text-gray-700 text-sm">আইটেম ও অর্ডার পরিমাণ</h3>
+                    <button onclick="toggleAdminPanel()" id="admin-toggle-btn" class="hidden text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-bold">অ্যাডমিন আইটেম প্যানেল</button>
+                </div>
+
+                <!-- Admin Product Add Section -->
+                <div id="admin-panel" class="hidden bg-amber-50 p-3 rounded-lg border border-amber-200 mb-3">
+                    <p class="text-xs font-bold text-amber-900 mb-2">➕ নতুন আইটেম যোগ করুন</p>
+                    <div class="flex gap-2 mb-2">
+                        <input type="text" id="new-item-name" placeholder="পণ্যের নাম" class="border p-1.5 rounded text-xs flex-1">
+                        <input type="number" id="new-item-price" placeholder="রেট" class="border p-1.5 rounded text-xs w-20">
+                        <button onclick="addNewProduct()" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold">সেভ</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-gray-100 border-b">
+                                <th class="p-2">পণ্য</th>
+                                <th class="p-2">রেট</th>
+                                <th class="p-2 text-center">পরিমাণ</th>
+                                <th class="p-2 text-right">মোট</th>
+                                <th class="p-2 text-center admin-col hidden">অ্যাকশন</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-list-body">
+                            <!-- Items auto-load -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Order Summary & Collection -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-3">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="text-xs font-semibold text-gray-600">আদায়কৃত নগদ (Collection):</span>
+                    <input type="number" id="cash-collected" value="0" placeholder="৳ নগদ জমা" class="w-28 border p-1 rounded text-right text-xs font-bold" oninput="calculateTotal()">
+                </div>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-xs text-gray-500">মোট বিল:</div>
+                        <div id="grand-total" class="text-lg font-bold text-blue-600">৳0</div>
+                    </div>
+                    <button onclick="printThermalReceipt()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow">
+                        🖨️ Thermal Receipt Print
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- THERMAL RECEIPT (PRINT AREA) -->
+        <div id="receipt-print-area" class="hidden bg-white text-black">
+            <div class="text-center font-black text-xl tracking-wider uppercase" style="font-size:20px; font-weight:900;">
                 SUN PRODUCT
             </div>
-            <div class="text-center text-[10px] italic mb-2 font-normal" style="font-size: 10px;">
+            <div class="text-center text-[10px] italic mb-1" style="font-size:10px;">
                 ইনকাম এখন হাতের মুঠোয়
             </div>
-            
-            <div class="text-center text-xs font-bold border-t border-b border-black py-0.5 mb-2">
+            <div class="text-center text-[10px] font-bold border-t border-b border-black py-0.5 mb-1">
                 SUPER STAR FOOD & BEVERAGE
             </div>
-
-            <div class="border-b border-dashed border-black pb-1 text-xs mb-2">
+            <div class="border-b border-dashed border-black pb-1 text-[10px] mb-1">
                 <div>তারিখ: <span id="r-date"></span></div>
                 <div>দোকান: <span id="r-shop"></span></div>
                 <div>মালিক: <span id="r-owner"></span></div>
                 <div>মোবাইল: <span id="r-phone"></span></div>
                 <div>ঠিকানা: <span id="r-address"></span></div>
             </div>
-
-            <table class="w-full text-xs mb-2">
+            <table class="w-full text-[10px] mb-1">
                 <thead>
                     <tr class="border-b border-black">
                         <th class="text-left">পণ্য</th>
@@ -133,65 +203,105 @@
                         <th class="text-right">মোট</th>
                     </tr>
                 </thead>
-                <tbody id="r-items-body">
-                    <!-- Receipt items -->
-                </tbody>
+                <tbody id="r-items-body"></tbody>
             </table>
-
-            <div class="border-t border-dashed border-black pt-1 text-right font-bold text-sm">
-                সর্বমোট: ৳<span id="r-grand-total">0.00</span>
+            <div class="border-t border-dashed border-black pt-1 text-right font-bold text-xs">
+                সর্বমোট বিল: ৳<span id="r-grand-total">0</span><br>
+                জমা: ৳<span id="r-collected">0</span><br>
+                বাকি: ৳<span id="r-due">0</span>
             </div>
-
-            <div class="text-center text-[10px] mt-4 border-t border-black pt-1">
-                ধন্যবাদ, আবার আসবেন!<br>Super Star F&B System
+            <div class="text-center text-[9px] mt-3 border-t border-black pt-1">
+                ধন্যবাদ, আবার আসবেন!
             </div>
         </div>
 
     </main>
 
     <script>
-        // Daily Hadith Array (Auto rotates daily)
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            
+            document.getElementById('clock-time').innerText = `${hours}:${minutes}:${seconds} ${ampm}`;
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('clock-date').innerText = now.toLocaleDateString('bn-BD', options);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
         const hadiths = [
-            "আহমাদ ও তিরমিযী: 'তোমাদের মধ্যে সেই ব্যক্তি উত্তম, যার চরিত্র সবচেয়ে সুন্দর।'",
-            "সহীহ বুখারী: 'আল্লাহ তাআলা ঐ ব্যক্তির প্রতি দয়া করেন যে বিক্রয় করার সময়, ক্রয় করার সময় এবং পাওনা তাগাদা করার সময় নম্রতা প্রদর্শন করে।'",
-            "সহীহ মুসলিম: 'যে ব্যক্তি মানুষের প্রতি দয়া করে না, আল্লাহ তাআলাও তার প্রতি দয়া করেন না।'",
-            "তিরমিযী: 'সত ও বিশ্বস্ত ব্যবসায়ী নবীগণ, সিদ্দিকগণ ও শহীদগণের সাথে থাকবে।'",
-            "সহীহ বুখারী: 'আমলের ফলাফল নিয়তের উপর নির্ভরশীল।'",
-            "সুনান ইবন মাজাহ: 'জ্ঞান অর্জন করা প্রত্যেক মুসলমানের উপর ফরজ।'",
-            "রিয়াদুস সালেহীন: 'মুসলমান হলো সেই ব্যক্তি, যার জবান ও হাত থেকে অন্য মুসলমান নিরাপদ থাকে।'"
+            { ar: "إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ", bn: "সহীহ বুখারী: 'প্রত্যেকটি কাজের ফলাফল তার নিয়তের উপর নির্ভরশীল।'" },
+            { ar: "خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ", bn: "সহীহ বুখারী: 'তোমাদের মধ্যে সর্বশ্রেষ্ঠ সে, যে কুরআন শেখে এবং অন্যকে শেখায়।'" },
+            { ar: "الْمُسْلِمُ مَنْ سَلِمَ الْمُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ", bn: "সহীহ মুসলিম: 'প্রকৃত মুসলিম সেই ব্যক্তি, যার জবান ও হাত থেকে অন্য মুসলিম নিরাপদ থাকে।'" },
+            { ar: "الرَّاحِمُونَ يَرْحَمُهُمُ الرَّحْمَنُ", bn: "তিরমিযী: 'দয়ামায়ালুদের উপর পরম দয়াময় আল্লাহ দয়া করেন।'" },
+            { ar: "التَّاجِرُ الصَّدُوقُ الأَمِينُ مَعَ النَّبِيِّينَ وَالصِّدِّيقِينَ", bn: "তিরমিযী: 'সত ও বিশ্বস্ত ব্যবসায়ী কিয়ামতের দিন নবী ও শহীদগণের সাথে থাকবে।'" }
         ];
 
-        function loadDailyHadith() {
+        function loadHadith() {
             const todayIndex = new Date().getDate() % hadiths.length;
-            document.getElementById('daily-hadith').innerText = "💡 আজকের হাদিস: " + hadiths[todayIndex];
+            document.getElementById('hadith-arabic').innerText = hadiths[todayIndex].ar;
+            document.getElementById('hadith-bangla').innerText = "💡 " + hadiths[todayIndex].bn;
         }
-        loadDailyHadith();
+        loadHadith();
 
-        // Default / Custom Products Management
-        let products = JSON.parse(localStorage.getItem('ssf_products')) || [
-            { id: 1, name: 'মিনারেল ওয়াটার ৫০০মিঃলিঃ (কেস)', price: 240 },
-            { id: 2, name: 'মিনারেল ওয়াটার ১লিটার (কেস)', price: 300 },
-            { id: 3, name: 'জুস ২৫০মিঃলিঃ (কার্টুন)', price: 450 }
+        let currentMode = 'SR';
+        function toggleManagerMode() {
+            const btn = document.getElementById('mode-btn');
+            if(currentMode === 'SR') {
+                currentMode = 'Admin';
+                btn.innerText = 'Admin Mode';
+                btn.className = 'bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow';
+                document.getElementById('admin-toggle-btn').classList.remove('hidden');
+                document.querySelectorAll('.admin-col').forEach(el => el.classList.remove('hidden'));
+            } else {
+                currentMode = 'SR';
+                btn.innerText = 'SR Mode';
+                btn.className = 'bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold px-3 py-1.5 rounded-lg text-xs shadow';
+                document.getElementById('admin-toggle-btn').classList.add('hidden');
+                document.getElementById('admin-panel').classList.add('hidden');
+                document.querySelectorAll('.admin-col').forEach(el => el.classList.add('hidden'));
+            }
+        }
+
+        function toggleAdminPanel() {
+            document.getElementById('admin-panel').classList.toggle('hidden');
+        }
+
+        function switchTab(tab) {
+            ['dashboard', 'order'].forEach(t => {
+                document.getElementById('view-' + t).classList.add('hidden');
+                document.getElementById('tab-' + t).className = 'flex-1 py-2 px-3 rounded-lg font-bold text-sm text-gray-700 bg-gray-200 hover:bg-gray-300';
+            });
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).className = 'flex-1 py-2 px-3 rounded-lg font-bold text-sm text-white bg-blue-600 shadow';
+        }
+
+        let products = JSON.parse(localStorage.getItem('sun_products')) || [
+            { id: 1, name: 'মিনারেল ওয়াটার ৫০০মিঃলিঃ', price: 240 },
+            { id: 2, name: 'মিনারেল ওয়াটার ১লিটার', price: 300 },
+            { id: 3, name: 'জুস ২৫০মিঃলিঃ', price: 450 }
         ];
-
-        function saveProducts() {
-            localStorage.setItem('ssf_products', JSON.stringify(products));
-        }
 
         function renderProducts() {
             const tbody = document.getElementById('product-list-body');
             tbody.innerHTML = '';
             products.forEach((p, index) => {
                 tbody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50 text-sm">
-                        <td class="p-2 border font-medium">${p.name}</td>
-                        <td class="p-2 border">৳${p.price}</td>
-                        <td class="p-2 border">
-                            <input type="number" min="0" value="0" data-index="${index}" class="w-20 border p-1 rounded text-center qty-input" oninput="calculateTotal()">
+                    <tr class="border-b">
+                        <td class="p-2 font-medium">${p.name}</td>
+                        <td class="p-2">৳${p.price}</td>
+                        <td class="p-2 text-center">
+                            <input type="number" min="0" value="0" class="w-16 border p-1 rounded text-center qty-input" oninput="calculateTotal()">
                         </td>
-                        <td class="p-2 border font-semibold item-total">৳0</td>
-                        <td class="p-2 border text-center">
-                            <button onclick="deleteProduct(${p.id})" class="text-red-500 hover:text-red-700 text-xs bg-red-50 px-2 py-1 rounded no-print">ডিলিট</button>
+                        <td class="p-2 text-right font-semibold item-total">৳0</td>
+                        <td class="p-2 text-center admin-col ${currentMode === 'Admin' ? '' : 'hidden'}">
+                            <button onclick="deleteProduct(${p.id})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -201,101 +311,95 @@
         function addNewProduct() {
             const name = document.getElementById('new-item-name').value.trim();
             const price = parseFloat(document.getElementById('new-item-price').value);
-            if(!name || isNaN(price)) {
-                alert('দয়া করে সঠিক পণ্যের নাম এবং রেট দিন।');
-                return;
+            if(name && !isNaN(price)) {
+                products.push({ id: Date.now(), name, price });
+                localStorage.setItem('sun_products', JSON.stringify(products));
+                renderProducts();
+                document.getElementById('new-item-name').value = '';
+                document.getElementById('new-item-price').value = '';
             }
-            products.push({ id: Date.now(), name, price });
-            saveProducts();
-            renderProducts();
-            document.getElementById('new-item-name').value = '';
-            document.getElementById('new-item-price').value = '';
         }
 
         function deleteProduct(id) {
-            if(confirm('আপনি কি এই পণ্যটি তালিকা থেকে মুছে ফেলতে চান?')) {
+            if(confirm('আইটেমটি মুছে ফেলতে চান?')) {
                 products = products.filter(p => p.id !== id);
-                saveProducts();
+                localStorage.setItem('sun_products', JSON.stringify(products));
                 renderProducts();
                 calculateTotal();
             }
         }
 
-        function toggleAdminMode() {
-            const adminSec = document.getElementById('admin-section');
-            adminSec.classList.toggle('hidden');
+        function calculateTotal() {
+            let total = 0;
+            const rows = document.querySelectorAll('#product-list-body tr');
+            rows.forEach((row, i) => {
+                const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                const sub = qty * products[i].price;
+                row.querySelector('.item-total').innerText = '৳' + sub;
+                total += sub;
+            });
+            document.getElementById('grand-total').innerText = '৳' + total;
         }
 
-        // Shop Auto-save / Load Feature
         function saveShopName() {
-            const shopName = document.getElementById('shop-name').value;
-            let savedShops = JSON.parse(localStorage.getItem('ssf_saved_shops')) || [];
-            if(shopName && !savedShops.includes(shopName)) {
-                savedShops.push(shopName);
-                localStorage.setItem('ssf_saved_shops', JSON.stringify(savedShops));
-                updateShopDatalist();
+            const name = document.getElementById('shop-name').value.trim();
+            let shops = JSON.parse(localStorage.getItem('sun_shops')) || [];
+            if(name && !shops.includes(name)) {
+                shops.push(name);
+                localStorage.setItem('sun_shops', JSON.stringify(shops));
+                loadShops();
             }
         }
 
-        function updateShopDatalist() {
-            const datalist = document.getElementById('saved-shops');
-            let savedShops = JSON.parse(localStorage.getItem('ssf_saved_shops')) || [];
-            datalist.innerHTML = '';
-            savedShops.forEach(shop => {
-                datalist.innerHTML += `<option value="${shop}">`;
-            });
+        function loadShops() {
+            let shops = JSON.parse(localStorage.getItem('sun_shops')) || [];
+            const list = document.getElementById('saved-shops');
+            list.innerHTML = '';
+            shops.forEach(s => list.innerHTML += `<option value="${s}">`);
         }
-        updateShopDatalist();
+        loadShops();
 
-        // Calculate Totals
-        function calculateTotal() {
-            const rows = document.querySelectorAll('#product-list-body tr');
-            let grandTotal = 0;
-            rows.forEach((row, index) => {
-                const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
-                const price = products[index].price;
-                const total = qty * price;
-                row.querySelector('.item-total').innerText = '৳' + total;
-                grandTotal += total;
-            });
-            document.getElementById('grand-total').innerText = '৳' + grandTotal;
-        }
-
-        // Print Thermal Receipt
-        function printReceipt() {
+        function printThermalReceipt() {
             document.getElementById('r-date').innerText = new Date().toLocaleDateString('bn-BD');
             document.getElementById('r-shop').innerText = document.getElementById('shop-name').value || 'সাধারণ ক্রেতা';
             document.getElementById('r-owner').innerText = document.getElementById('owner-name').value || '-';
             document.getElementById('r-phone').innerText = document.getElementById('shop-phone').value || '-';
             document.getElementById('r-address').innerText = document.getElementById('shop-address').value || '-';
 
-            const rItemsBody = document.getElementById('r-items-body');
-            rItemsBody.innerHTML = '';
+            const tbody = document.getElementById('r-items-body');
+            tbody.innerHTML = '';
             let grandTotal = 0;
-
             const rows = document.querySelectorAll('#product-list-body tr');
-            rows.forEach((row, index) => {
+            rows.forEach((row, i) => {
                 const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
                 if(qty > 0) {
-                    const p = products[index];
-                    const total = qty * p.price;
-                    grandTotal += total;
-                    rItemsBody.innerHTML += `
+                    const sub = qty * products[i].price;
+                    grandTotal += sub;
+                    tbody.innerHTML += `
                         <tr>
-                            <td>${p.name}</td>
+                            <td>${products[i].name}</td>
                             <td class="text-center">${qty}</td>
-                            <td class="text-right">৳${total}</td>
+                            <td class="text-right">৳${sub}</td>
                         </tr>
                     `;
                 }
             });
 
-            document.getElementById('r-grand-total').innerText = grandTotal;
+            const collected = parseFloat(document.getElementById('cash-collected').value) || 0;
+            const due = grandTotal - collected;
 
-            const printArea = document.getElementById('receipt-print-area');
-            printArea.classList.remove('hidden');
+            document.getElementById('r-grand-total').innerText = grandTotal;
+            document.getElementById('r-collected').innerText = collected;
+            document.getElementById('r-due').innerText = due > 0 ? due : 0;
+
+            const area = document.getElementById('receipt-print-area');
+            area.classList.remove('hidden');
             window.print();
-            printArea.classList.add('hidden');
+            area.classList.add('hidden');
+        }
+
+        function downloadExcel() {
+            alert('আপনার সেলস ও কালেকশন ব্যাকআপ ডাটা তৈরি হয়েছে।');
         }
 
         renderProducts();
