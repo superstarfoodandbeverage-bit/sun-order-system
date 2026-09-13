@@ -89,8 +89,8 @@
             <!-- Saved Orders History List -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mt-4">
                 <div class="flex justify-between items-center border-b pb-2 mb-3">
-                    <h3 class="font-bold text-gray-700 text-sm">আজকের অর্ডার তালিকা (<span id="order-count">0</span>টি)</h3>
-                    <button onclick="clearAllOrders()" class="text-xs text-red-500 font-semibold hover:underline admin-col hidden">সব মুছুন</button>
+                    <h3 class="font-bold text-gray-700 text-sm">আজকের সেভ করা অর্ডারসমূহ (<span id="order-count">0</span>)</h3>
+                    <button onclick="clearAllOrders()" class="text-xs text-red-500 font-semibold hover:underline admin-col hidden">সব অর্ডার মুছুন</button>
                 </div>
                 <div id="saved-orders-list" class="space-y-2 max-h-60 overflow-y-auto text-xs">
                     <p class="text-gray-400 text-center py-4">এখনো কোনো অর্ডার সেভ করা হয়নি</p>
@@ -155,6 +155,7 @@
                                 <th class="p-2">পণ্য</th>
                                 <th class="p-2">রেট</th>
                                 <th class="p-2 text-center">পরিমাণ</th>
+                                <th class="p-2 text-center text-green-700 font-bold">🎁 ফ্রি পিস</th>
                                 <th class="p-2 text-right">মোট</th>
                                 <th class="p-2 text-center admin-col hidden">অ্যাকশন</th>
                             </tr>
@@ -164,6 +165,12 @@
                 </div>
             </div>
 
+            <!-- Shopkeeper Gift Section -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="font-bold text-gray-700 mb-2 text-sm border-b pb-1">🎁 দোকানদার উপহার/গিফট (যদি থাকে)</h3>
+                <input type="text" id="shop-gift" placeholder="যেমন: ১টি টি-শার্ট / ১টি দেয়াল ঘড়ি ইত্যাদি" class="w-full border p-2 rounded-lg text-sm bg-purple-50 border-purple-200 focus:outline-purple-500">
+            </div>
+
             <!-- Order Summary & Action Buttons -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-3">
                 <div class="flex justify-between items-center border-b pb-2">
@@ -171,25 +178,20 @@
                     <input type="number" id="cash-collected" value="0" placeholder="৳ নগদ জমা" class="w-28 border p-1 rounded text-right text-xs font-bold" oninput="calculateTotal()">
                 </div>
                 
-                <div class="flex justify-between items-center pt-2">
+                <div class="flex justify-between items-center pt-1">
                     <div>
                         <div class="text-xs text-gray-500">মোট বিল:</div>
                         <div id="grand-total" class="text-lg font-bold text-blue-600">৳0</div>
                     </div>
                     
-                    <button onclick="saveOrder()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-bold text-sm shadow flex items-center gap-2">
-                        <i class="fa-solid fa-circle-check"></i> সেভ করুন ও জমা দিন
-                    </button>
-                </div>
-
-                <!-- Social & Print Shortcuts -->
-                <div class="grid grid-cols-2 gap-2 pt-2 border-t">
-                    <button onclick="printThermalReceipt()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 shadow">
-                        <i class="fa-solid fa-print"></i> Receipt Print
-                    </button>
-                    <button onclick="sendWhatsApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 shadow">
-                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="saveOrder()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-1">
+                            <i class="fa-solid fa-floppy-disk"></i> অর্ডার সেভ করুন
+                        </button>
+                        <button onclick="printThermalReceipt()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-1">
+                            <i class="fa-solid fa-print"></i> প্রিন্ট
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -217,11 +219,15 @@
                     <tr class="border-b border-black">
                         <th class="text-left">পণ্য</th>
                         <th class="text-center">পরিমাণ</th>
+                        <th class="text-center">ফ্রি</th>
                         <th class="text-right">মোট</th>
                     </tr>
                 </thead>
                 <tbody id="r-items-body"></tbody>
             </table>
+            <div id="r-gift-container" class="hidden border-t border-dashed border-black py-1 text-[10px]">
+                🎁 <strong>দোকানদার গিফট:</strong> <span id="r-gift-text"></span>
+            </div>
             <div class="border-t border-dashed border-black pt-1 text-right font-bold text-xs">
                 সর্বমোট বিল: ৳<span id="r-grand-total">0</span><br>
                 জমা: ৳<span id="r-collected">0</span><br>
@@ -315,7 +321,10 @@
                         <td class="p-2 font-medium">${p.name}</td>
                         <td class="p-2">৳${p.price}</td>
                         <td class="p-2 text-center">
-                            <input type="number" min="0" value="0" class="w-16 border p-1 rounded text-center qty-input" oninput="calculateTotal()">
+                            <input type="number" min="0" value="0" class="w-14 border p-1 rounded text-center qty-input" oninput="calculateTotal()">
+                        </td>
+                        <td class="p-2 text-center">
+                            <input type="number" min="0" value="0" class="w-14 border p-1 rounded text-center free-qty-input bg-green-50 text-green-700 font-bold">
                         </td>
                         <td class="p-2 text-right font-semibold item-total">৳0</td>
                         <td class="p-2 text-center admin-col ${currentMode === 'Admin' ? '' : 'hidden'}">
@@ -344,15 +353,31 @@
             const grandTotal = calculateTotal();
             const collected = parseFloat(document.getElementById('cash-collected').value) || 0;
             const due = grandTotal - collected;
+            const shopGift = document.getElementById('shop-gift').value.trim();
 
             if (!shopName) {
                 alert('দয়া করে দোকানের নাম লিখুন!');
                 return;
             }
-            if (grandTotal <= 0) {
-                alert('কমপক্ষে একটি পণ্যের পরিমাণ নির্ধারণ করুন!');
+            if (grandTotal <= 0 && !shopGift) {
+                alert('কমপক্ষে একটি পণ্যের পরিমাণ বা গিফট নির্ধারণ করুন!');
                 return;
             }
+
+            let itemsOrdered = [];
+            const rows = document.querySelectorAll('#product-list-body tr');
+            rows.forEach((row, i) => {
+                const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                const freeQty = parseFloat(row.querySelector('.free-qty-input').value) || 0;
+                if(qty > 0 || freeQty > 0) {
+                    itemsOrdered.push({
+                        name: products[i].name,
+                        qty: qty,
+                        freeQty: freeQty,
+                        subtotal: qty * products[i].price
+                    });
+                }
+            });
 
             const newOrder = {
                 id: Date.now(),
@@ -363,13 +388,14 @@
                 total: grandTotal,
                 collected: collected,
                 due: due > 0 ? due : 0,
+                gift: shopGift,
+                items: itemsOrdered,
                 time: new Date().toLocaleTimeString('bn-BD')
             };
 
             savedOrders.push(newOrder);
             localStorage.setItem('sun_orders', JSON.stringify(savedOrders));
 
-            // Save shop name for suggestions
             let shops = JSON.parse(localStorage.getItem('sun_shops')) || [];
             if(!shops.includes(shopName)) {
                 shops.push(shopName);
@@ -377,7 +403,7 @@
                 loadShops();
             }
 
-            alert('✅ অর্ডার সফলভাবে সেভ হয়েছে! ড্যাশবোর্ডে যোগ হয়ে গেছে।');
+            alert('অর্ডার সফলভাবে সেভ হয়েছে!');
             resetForm();
             updateDashboard();
             switchTab('dashboard');
@@ -388,8 +414,10 @@
             document.getElementById('owner-name').value = '';
             document.getElementById('shop-phone').value = '';
             document.getElementById('shop-address').value = '';
+            document.getElementById('shop-gift').value = '';
             document.getElementById('cash-collected').value = '0';
             document.querySelectorAll('.qty-input').forEach(input => input.value = 0);
+            document.querySelectorAll('.free-qty-input').forEach(input => input.value = 0);
             calculateTotal();
         }
 
@@ -414,6 +442,7 @@
                             <div>
                                 <div class="font-bold text-blue-900">${o.shop} <span class="text-[10px] text-gray-400">(${o.time})</span></div>
                                 <div class="text-[10px] text-gray-500">বিল: ৳${o.total} | জমা: ৳${o.collected} | বাকি: ৳${o.due}</div>
+                                ${o.gift ? `<div class="text-[10px] text-purple-700 font-semibold">🎁 গিফট: ${o.gift}</div>` : ''}
                             </div>
                             <span class="px-2 py-1 text-[10px] font-bold rounded ${o.due > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
                                 ${o.due > 0 ? 'বাকি' : 'পরিশোধ'}
@@ -478,18 +507,30 @@
             const rows = document.querySelectorAll('#product-list-body tr');
             rows.forEach((row, i) => {
                 const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
-                if(qty > 0) {
+                const freeQty = parseFloat(row.querySelector('.free-qty-input').value) || 0;
+                if(qty > 0 || freeQty > 0) {
                     const sub = qty * products[i].price;
                     grandTotal += sub;
                     tbody.innerHTML += `
                         <tr>
                             <td>${products[i].name}</td>
                             <td class="text-center">${qty}</td>
+                            <td class="text-center font-bold text-green-700">${freeQty > 0 ? freeQty : '-'}</td>
                             <td class="text-right">৳${sub}</td>
                         </tr>
                     `;
                 }
             });
+
+            // Gift Details Print
+            const shopGift = document.getElementById('shop-gift').value.trim();
+            const giftContainer = document.getElementById('r-gift-container');
+            if (shopGift) {
+                document.getElementById('r-gift-text').innerText = shopGift;
+                giftContainer.classList.remove('hidden');
+            } else {
+                giftContainer.classList.add('hidden');
+            }
 
             const collected = parseFloat(document.getElementById('cash-collected').value) || 0;
             const due = grandTotal - collected;
@@ -502,13 +543,6 @@
             area.classList.remove('hidden');
             window.print();
             area.classList.add('hidden');
-        }
-
-        function sendWhatsApp() {
-            const shop = document.getElementById('shop-name').value || 'দোকান';
-            const total = document.getElementById('grand-total').innerText;
-            const text = `SUN PRODUCT - অর্ডার বিবরণ:\nদোকান: ${shop}\nমোট বিল: ${total}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
 
         function downloadExcel() {
