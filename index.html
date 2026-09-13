@@ -556,7 +556,7 @@
                             <button onclick='viewSavedSlip(${o.id})' class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
-                            <button onclick='deleteSavedOrder(${o.id})' class="bg-red-100 text-red-600 hover:bg-red-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
+                            <button onclick='deleteSavedOrder(${o.id})' class="bg-red-100 text-red-600 hover:bg-red-200 px-2.5 py-1.5 rounded-lg text-xs font-bold" title="মুছে ফেলার জন্য পাসওয়ার্ড প্রয়োজন">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
@@ -573,12 +573,17 @@
             }
         }
 
+        // পাসওয়ার্ড সুরক্ষা যুক্ত মেমো ডিলিট ফাংশন
         function deleteSavedOrder(id) {
-            if (confirm('অর্ডারটি মুছে ফেলতে চান?')) {
+            const pass = prompt("মেমোটি ডিলিট করতে অ্যাডমিন পাসওয়ার্ড দিন:");
+            if (pass === ADMIN_PIN) {
                 savedOrders = savedOrders.filter(o => o.id !== id);
                 localStorage.setItem('sun_orders', JSON.stringify(savedOrders));
                 renderSavedOrders();
                 updateDashboard();
+                alert("মেমোটি মুছে ফেলা হয়েছে।");
+            } else if (pass !== null) {
+                alert("ভুল পাসওয়ার্ড! মেমো ডিলিট করার অনুভূতি কেবল অ্যাডমিনের রয়েছে।");
             }
         }
 
