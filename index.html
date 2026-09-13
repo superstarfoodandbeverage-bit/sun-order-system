@@ -316,7 +316,8 @@
     </main>
 
     <script>
-        const ADMIN_PIN = "1234";
+        // নতুন পিন/পাসওয়ার্ড
+        const ADMIN_PIN = "590982";
 
         function updateClock() {
             const now = new Date();
@@ -573,17 +574,24 @@
             }
         }
 
-        // পাসওয়ার্ড সুরক্ষা যুক্ত মেমো ডিলিট ফাংশন
+        // 🔒 পাসওয়ার্ড দিয়ে মেমো ডিলিট করার সুনির্দিষ্ট সুরক্ষামূলক ফাংশন
         function deleteSavedOrder(id) {
-            const pass = prompt("মেমোটি ডিলিট করতে অ্যাডমিন পাসওয়ার্ড দিন:");
+            const pass = prompt("মেমোটি ডিলিট করতে পাসওয়ার্ড দিন:");
+            
+            // খালি পাসওয়ার্ড দিলে বা ক্যান্সেল করলে ডিলিট হবে না
+            if (pass === null || pass.trim() === "") {
+                return;
+            }
+            
+            // সঠিক পাসওয়ার্ড (590982) দিলে ডিলিট হবে
             if (pass === ADMIN_PIN) {
                 savedOrders = savedOrders.filter(o => o.id !== id);
                 localStorage.setItem('sun_orders', JSON.stringify(savedOrders));
                 renderSavedOrders();
                 updateDashboard();
-                alert("মেমোটি মুছে ফেলা হয়েছে।");
-            } else if (pass !== null) {
-                alert("ভুল পাসওয়ার্ড! মেমো ডিলিট করার অনুভূতি কেবল অ্যাডমিনের রয়েছে।");
+                alert("মেমোটি সফলভাবে মুছে ফেলা হয়েছে।");
+            } else {
+                alert("ভুল পাসওয়ার্ড! পাসওয়ার্ড ছাড়া মেমো ডিলিট করা সম্ভব নয়।");
             }
         }
 
@@ -804,11 +812,14 @@
         }
 
         function deleteProduct(id) {
-            if(confirm('আইটেমটি মুছে ফেলতে চান?')) {
+            const pass = prompt("আইটেমটি ডিলিট করতে পাসওয়ার্ড দিন:");
+            if(pass === ADMIN_PIN) {
                 products = products.filter(p => p.id !== id);
                 localStorage.setItem('sun_products', JSON.stringify(products));
                 renderProducts();
                 calculateTotal();
+            } else if(pass !== null) {
+                alert("ভুল পাসওয়ার্ড!");
             }
         }
 
