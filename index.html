@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUN - SR Market Order System</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SheetJS for Excel Backup -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #print-area, #print-area * {
+        visibility: visible;
+      }
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 pb-10">
+
+  <!-- Header Bar -->
+  <header class="bg-blue-600 text-white p-4 flex justify-between items-center shadow-md">
+    <div class="flex items-center space-x-2">
+      <div class="text-amber-400 text-3xl font-bold flex items-center">
+        ☀️ <span class="text-white text-xl ml-1 font-extrabold tracking-wide">SUN</span>
+      </div>
+    </div>
+    <button onclick="alert('ম্যানেজার ড্যাশবোর্ডে স্বাগতম')" class="bg-amber-400 text-slate-900 font-bold px-4 py-2 rounded-md hover:bg-amber-300 transition text-sm">
+      Manager Mode
+    </button>
+  </header>
+
+  <!-- Live Date & Time -->
+  <div class="max-w-md mx-auto mt-4 px-4">
+    <div class="bg-white rounded-2xl p-3 text-center shadow-sm border border-blue-200">
+      <div id="clock" class="text-blue-600 text-2xl font-bold">00:00:00 PM</div>
+      <div id="date" class="text-slate-500 text-xs mt-1">তারিখ লোড হচ্ছে...</div>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="max-w-md mx-auto mt-4 px-4">
+    <div class="grid grid-cols-2 gap-2">
+      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="bg-blue-600 text-white font-semibold py-2 rounded-lg shadow text-sm">Dashboard</button>
+      <button onclick="switchTab('order')" id="tab-order" class="bg-white text-slate-700 font-semibold py-2 rounded-lg shadow text-sm">SR Order Entry</button>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <main class="max-w-md mx-auto p-4">
+    
+    <!-- DASHBOARD VIEW -->
+    <div id="dashboard-view" class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+          <div class="text-xs text-slate-500 font-medium">💰 Total Sales</div>
+          <div class="text-lg font-bold text-slate-800 mt-1" id="dash-sales">৳ 0</div>
+        </div>
+        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+          <div class="text-xs text-slate-500 font-medium">💵 Total Collected</div>
+          <div class="text-lg font-bold text-slate-800 mt-1" id="dash-collected">৳ 0</div>
+        </div>
+        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+          <div class="text-xs text-slate-500 font-medium">📌 Total Due</div>
+          <div class="text-lg font-bold text-slate-800 mt-1" id="dash-due">৳ 0</div>
+        </div>
+        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+          <div class="text-xs text-slate-500 font-medium">📦 Total Prod</div>
+          <div class="text-lg font-bold text-slate-800 mt-1">2055</div>
+        </div>
+      </div>
+
+      <!-- Excel Download Button -->
+      <button onclick="exportToExcel()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow flex items-center justify-center space-x-2 mt-4">
+        <span>📊</span>
+        <span>Download Excel Backup (All Data)</span>
+      </button>
+
+      <!-- Live Orders List -->
+      <div class="mt-6">
+        <h3 class="font-bold text-slate-700 mb-2 text-sm">সাম্প্রতিক ইনভয়েসসমূহ:</h3>
+        <div id="order-list" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <!-- SR ORDER ENTRY VIEW -->
+    <div id="order-view" class="hidden space-y-4">
+      
+      <!-- Customer Info -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border space-y-2">
+        <h2 class="text-base font-bold text-blue-600">১. কাস্টমার / দোকানের তথ্য</h2>
+        <input type="text" id="shopName" class="w-full border p-2 rounded-lg text-sm focus:outline-blue-500" placeholder="দোকানের নাম লিখুন">
+        <input type="text" id="phoneNum" class="w-full border p-2 rounded-lg text-sm focus:outline-blue-500" placeholder="মোবাইল নম্বর (WhatsApp / SMS এর জন্য)">
+      </div>
+
+      <!-- Item Selection Form -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border space-y-3">
+        <h2 class="text-base font-bold text-blue-600">২. আইটেম যোগ করুন</h2>
+        
+        <div>
+          <label class="block text-xs text-slate-600 mb-1">প্রোডাক্ট সিলেক্ট করুন</label>
+          <select id="productSelect" onchange="updateProductDetails()" class="w-full border p-2 rounded-lg text-sm bg-white focus:outline-blue-500">
+            <option value="">-- প্রোডাক্ট বেছে নিন --</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs text-slate-600 mb-1">ইউনিট (একক)</label>
+            <select id="unitSelect" onchange="calculateItemTotal()" class="w-full border p-2 rounded-lg text-sm bg-white focus:outline-blue-500">
+              <option value="কার্টুন">কার্টুন</option>
+              <option value="পিস">পিস</option>
+              <option value="ডজন">ডজন</option>
+              <option value="বস্তা">বস্তা</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-600 mb-1">পরিমাণ (Qty)</label>
+            <input type="number" id="itemQty" oninput="calculateItemTotal()" min="1" class="w-full border p-2 rounded-lg text-sm focus:outline-blue-500" placeholder="0">
+          </div>
+        </div>
+
+        <!-- Gift / Free Checkbox -->
+        <div class="flex items-center space-x-2 pt-1">
+          <input type="checkbox" id="isFreeGift" onchange="calculateItemTotal()" class="w-4 h-4 text-blue-600 rounded">
+          <label for="isFreeGift" class="text-xs font-bold text-green-600">🎁 এটি ফ্রি / গিফট আইটেম (টাকা ০ হবে)</label>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-600 mb-1">মোট টাকা (Auto)</label>
+          <input type="number" id="itemTotal" class="w-full border p-2 rounded-lg text-sm bg-slate-100 font-bold text-blue-600" placeholder="0.00">
+        </div>
+
+        <button type="button" onclick="addToCart()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2 rounded-lg shadow text-sm">
+          + কার্টে আইটেম যোগ করুন
+        </button>
+      </div>
+
+      <!-- Cart Item List -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border">
+        <h2 class="text-base font-bold text-slate-700 mb-2">🛒 কার্ট তালিকা (ইনভয়েস আইটেম)</h2>
+        <div id="cartItems" class="space-y-2 mb-3">
+          <p class="text-xs text-slate-400 text-center py-2">কোনো আইটেম যোগ করা হয়নি</p>
+        </div>
+        
+        <div class="border-t pt-2 space-y-2">
+          <div class="flex justify-between font-bold text-slate-800 text-sm">
+            <span>সর্বমোট বিল:</span>
+            <span id="cartGrandTotal">৳ 0</span>
+          </div>
+          
+          <div>
+            <label class="block text-xs text-slate-600 mb-1">নগদ জমা (Collected Amount)</label>
+            <input type="number" id="paidAmount" class="w-full border p-2 rounded-lg text-sm focus:outline-blue-500" placeholder="0.00">
+          </div>
+
+          <button onclick="submitInvoice()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow text-sm">
+            ✓ সম্পূর্ণ ইনভয়েস সাবমিট করুন
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Thermal Print Receipt Template -->
+  <div id="print-area" class="p-4 bg-white hidden">
+    <div class="text-center font-bold text-lg">☀️ SUN PRODUCT</div>
+    <div class="text-center text-xs mb-2">ইনকাম এখন হাতের মুঠোয়</div>
+    <div id="print-details" class="text-xs space-y-2"></div>
+  </div>
+
+  <script>
+    const presetProducts = [
+      { id: 1, name: 'সয়াবিন তেল ১ লিটার', unitPrices: { 'কার্টুন': 2100, 'পিস': 175, 'ডজন': 2100, 'বস্তা': 2100 } },
+      { id: 2, name: 'মিনিকেট চাল ৫০ কেজি', unitPrices: { 'কার্টুন': 3400, 'পিস': 3400, 'ডজন': 3400, 'বস্তা': 3400 } },
+      { id: 3, name: 'ডিটারজেন্ট পাউডার ৫০০ গ্রাম', unitPrices: { 'কার্টুন': 720, 'পিস': 60, 'ডজন': 720, 'বস্তা': 720 } },
+      { id: 4, name: 'বিস্কুট প্যাক', unitPrices: { 'কার্টুন': 540, 'পিস': 45, 'ডজন': 540, 'বস্তা': 540 } }
+    ];
+
+    let currentCart = [];
+    let invoices = [];
+    let selectedProduct = null;
+    let invoiceCounter = 1000;
+
+    function loadProducts() {
+      const select = document.getElementById('productSelect');
+      presetProducts.forEach(p => {
+        const option = document.createElement('option');
+        option.value = p.id;
+        option.textContent = p.name;
+        select.appendChild(option);
+      });
+    }
+
+    function updateProductDetails() {
+      const pId = document.getElementById('productSelect').value;
+      selectedProduct = presetProducts.find(p => p.id == pId);
+      calculateItemTotal();
+    }
+
+    function calculateItemTotal() {
+      const qty = parseFloat(document.getElementById('itemQty').value) || 0;
+      const unit = document.getElementById('unitSelect').value;
+      const isFree = document.getElementById('isFreeGift').checked;
+
+      if (isFree) {
+        document.getElementById('itemTotal').value = 0;
+        return;
+      }
+
+      if (selectedProduct && qty > 0) {
+        const price = selectedProduct.unitPrices[unit] || 0;
+        document.getElementById('itemTotal').value = price * qty;
+      } else {
+        document.getElementById('itemTotal').value = 0;
+      }
+    }
+
+    function addToCart() {
+      const qty = parseFloat(document.getElementById('itemQty').value);
+      const unit = document.getElementById('unitSelect').value;
+      const isFree = document.getElementById('isFreeGift').checked;
+      const total = isFree ? 0 : parseFloat(document.getElementById('itemTotal').value);
+
+      if (!selectedProduct || !qty || qty <= 0) {
+        alert("দয়া করে প্রোডাক্ট এবং সঠিক পরিমাণ সিলেক্ট করুন!");
+        return;
+      }
+
+      currentCart.push({
+        productName: selectedProduct.name + (isFree ? ' (🎁 FREE GIFT)' : ''),
+        unit: unit,
+        mrp: isFree ? 0 : (selectedProduct.unitPrices[unit] || 0),
+        qty: qty,
+        total: total,
+        isFree: isFree
+      });
+
+      renderCart();
+      document.getElementById('productSelect').value = '';
+      document.getElementById('itemQty').value = '';
+      document.getElementById('itemTotal').value = '';
+      document.getElementById('isFreeGift').checked = false;
+      selectedProduct = null;
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cartItems');
+      if(currentCart.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">কোনো আইটেম যোগ করা হয়নি</p>`;
+        document.getElementById('cartGrandTotal').innerText = `৳ 0`;
+        return;
+      }
+
+      container.innerHTML = '';
+      let grandTotal = 0;
+      currentCart.forEach((item, index) => {
+        grandTotal += item.total;
+        container.innerHTML += `
+          <div class="flex justify-between items-center text-xs ${item.isFree ? 'bg-green-50 border-green-200' : 'bg-slate-50'} p-2 rounded border">
+            <div>
+              <div class="font-bold text-slate-800">${item.productName}</div>
+              <div class="text-slate-500">${item.qty} ${item.unit} ${item.isFree ? '' : 'x ৳' + item.mrp}</div>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="font-bold ${item.isFree ? 'text-green-600' : 'text-blue-600'}">${item.isFree ? 'FREE' : '৳' + item.total}</span>
+              <button onclick="removeFromCart(${index})" class="text-red-500 font-bold hover:bg-red-100 px-1 rounded">✕</button>
+            </div>
+          </div>
+        `;
+      });
+      document.getElementById('cartGrandTotal').innerText = `৳ ${grandTotal}`;
+    }
+
+    function removeFromCart(index) {
+      currentCart.splice(index, 1);
+      renderCart();
+    }
+
+    function submitInvoice() {
+      const shopName = document.getElementById('shopName').value.trim();
+      const phoneNum = document.getElementById('phoneNum').value.trim();
+      const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+
+      if (!shopName) {
+        alert("দয়া করে দোকানের নাম লিখুন!");
+        return;
+      }
+      if (currentCart.length === 0) {
+        alert("আইটেম যোগ করুন!");
+        return;
+      }
+
+      const totalBill = currentCart.reduce((sum, item) => sum + item.total, 0);
+      invoiceCounter++;
+      const invoiceId = 'INV-' + invoiceCounter;
+      const date = document.getElementById('date').innerText;
+
+      const invoice = {
+        id: invoiceId,
+        shop: shopName,
+        phone: phoneNum,
+        items: [...currentCart],
+        totalBill: totalBill,
+        paid: paid,
+        due: totalBill - paid,
+        date: date
+      };
+
+      invoices.push(invoice);
+      updateDashboard();
+
+      currentCart = [];
+      renderCart();
+      document.getElementById('shopName').value = '';
+      document.getElementById('phoneNum').value = '';
+      document.getElementById('paidAmount').value = '';
+
+      alert(`ইনভয়েস ${invoiceId} তৈরি করা হয়েছে!`);
+      switchTab('dashboard');
+    }
+
+    function updateDashboard() {
+      let totalSales = 0, totalCollected = 0, totalDue = 0;
+      const listContainer = document.getElementById('order-list');
+      listContainer.innerHTML = '';
+
+      invoices.forEach((inv, index) => {
+        totalSales += inv.totalBill;
+        totalCollected += inv.paid;
+        totalDue += inv.due;
+
+        let itemsHtml = inv.items.map(i => `<li class="text-xs text-slate-600">${i.productName} (${i.qty} ${i.unit}) - ${i.isFree ? '🎁 FREE' : '৳' + i.total}</li>`).join('');
+
+        listContainer.innerHTML += `
+          <div class="bg-white p-3 rounded-xl border shadow-sm space-y-2">
+            <div class="flex justify-between items-center border-b pb-1">
+              <div>
+                <span class="font-bold text-slate-800 text-sm">${inv.shop}</span>
+                <span class="text-[10px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded ml-1">${inv.id}</span>
+              </div>
+              <span class="text-[11px] text-slate-400">${inv.date}</span>
+            </div>
+            <ul class="list-disc list-inside bg-slate-50 p-2 rounded">
+              ${itemsHtml}
+            </ul>
+            <div class="flex justify-between items-center text-xs pt-1">
+              <div>মোট: <strong class="text-blue-600">৳${inv.totalBill}</strong></div>
+              <div>জমা: <strong class="text-green-600">৳${inv.paid}</strong> | বকেয়া: <strong class="text-red-500">৳${inv.due}</strong></div>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-1 pt-2 border-t">
+              <button onclick="shareWhatsApp(${index})" class="bg-green-500 hover:bg-green-600 text-white font-bold py-1.5 px-1 rounded text-[11px] flex items-center justify-center">💬 WhatsApp</button>
+              <button onclick="shareImo(${index})" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-1 rounded text-[11px] flex items-center justify-center">📱 imo</button>
+              <button onclick="sendSMS(${index})" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 px-1 rounded text-[11px] flex items-center justify-center">✉️ SMS</button>
+              <button onclick="printInvoice(${index})" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-1.5 px-1 rounded text-[11px] flex items-center justify-center">🖨️ Print</button>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('dash-sales').innerText = `৳ ${totalSales}`;
+      document.getElementById('dash-collected').innerText = `৳ ${totalCollected}`;
+      document.getElementById('dash-due').innerText = `৳ ${totalDue}`;
+    }
+
+    function generateInvoiceText(inv) {
+      let text = `Sun product\n`;
+      text += `ইনকাম এখন হাতের মুঠোয়\n\n`;
+      text += `প্রিয় ${inv.shop},\n`;
+      text += `আপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে। নিচে বিস্তারিত বিবরণ দেওয়া হলো:\n\n`;
+      text += `ইনভয়েস নম্বর: ${inv.id}\n`;
+      text += `তারিখ: ${inv.date}\n\n`;
+      text += `পণ্যের বিবরণ:\n`;
+      
+      inv.items.forEach(i => {
+        text += `• ${i.productName} (${i.qty} ${i.unit}) - ${i.isFree ? 'FREE GIFT' : '৳' + i.total}\n`;
+      });
+      
+      text += `\nমোট বিল: ৳${inv.totalBill}\n`;
+      text += `জমা টাকা: ৳${inv.paid}\n`;
+      text += `বকেয়া টাকা: ৳${inv.due}\n\n`;
+      text += `আমাদের সাথে থাকার জন্য ধন্যবাদ! ☀️`;
+      
+      return encodeURIComponent(text);
+    }
+
+    function shareWhatsApp(index) {
+      const inv = invoices[index];
+      const text = generateInvoiceText(inv);
+      const url = inv.phone ? `https://wa.me/${inv.phone}?text=${text}` : `https://wa.me/?text=${text}`;
+      window.open(url, '_blank');
+    }
+
+    function shareImo(index) {
+      const inv = invoices[index];
+      const text = generateInvoiceText(inv);
+      if (navigator.share) {
+        navigator.share({ title: 'SUN Invoice', text: decodeURIComponent(text) });
+      } else {
+        alert("imo অ্যাপে শেয়ার করতে টেক্সট কপি করা হয়েছে:\n\n" + decodeURIComponent(text));
+      }
+    }
+
+    function sendSMS(index) {
+      const inv = invoices[index];
+      const text = generateInvoiceText(inv);
+      const url = inv.phone ? `sms:${inv.phone}?body=${text}` : `sms:?body=${text}`;
+      window.open(url, '_blank');
+    }
+
+    function printInvoice(index) {
+      const inv = invoices[index];
+      const printArea = document.getElementById('print-area');
+      const details = document.getElementById('print-details');
+
+      let itemsHtml = inv.items.map(i => `
+        <div style="display:flex; justify-content:space-between; font-size:12px;">
+          <span>${i.productName} (${i.qty} ${i.unit})</span>
+          <span>${i.isFree ? 'FREE' : '৳' + i.total}</span>
+        </div>
+      `).join('');
+
+      details.innerHTML = `
+        <p><strong>প্রিয়:</strong> ${inv.shop}</p>
+        <p><strong>ইনভয়েস নম্বর:</strong> ${inv.id}</p>
+        <p><strong>তারিখ:</strong> ${inv.date}</p>
+        <hr style="margin:5px 0; border-top: 1px dashed #000;" />
+        <p style="font-weight:bold; margin-bottom: 3px;">পণ্যের বিবরণ:</p>
+        ${itemsHtml}
+        <hr style="margin:5px 0; border-top: 1px dashed #000;" />
+        <p><strong>মোট বিল:</strong> ৳${inv.totalBill}</p>
+        <p><strong>জমা টাকা:</strong> ৳${inv.paid}</p>
+        <p><strong>বকেয়া টাকা:</strong> ৳${inv.due}</p>
+        <br />
+        <p style="text-align:center; font-size:10px;">আমাদের সাথে থাকার জন্য ধন্যবাদ! ☀️</p>
+      `;
+
+      printArea.classList.remove('hidden');
+      window.print();
+      printArea.classList.add('hidden');
+    }
+
+    function exportToExcel() {
+      if(invoices.length === 0) {
+        alert("ডাউনলোড করার মতো কোনো ডেটা নেই!");
+        return;
+      }
+      const flatData = [];
+      invoices.forEach(inv => {
+        inv.items.forEach(item => {
+          flatData.push({
+            "ইনভয়েস আইডি": inv.id,
+            "তারিখ": inv.date,
+            "দোকানের নাম": inv.shop,
+            "মোবাইল": inv.phone,
+            "প্রোডাক্ট": item.productName,
+            "পরিমাণ": item.qty,
+            "ইউনিট": item.unit,
+            "মোট টাকা": item.total,
+            "জমা টাকা": inv.paid,
+            "বকেয়া টাকা": inv.due
+          });
+        });
+      });
+      const ws = XLSX.utils.json_to_sheet(flatData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Invoices");
+      XLSX.writeFile(wb, "SUN_Product_Orders.xlsx");
+    }
+
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = now.getMinutes();
+      let seconds = now.getSeconds();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      minutes = minutes < 10 ? '0' + minutes : minutes;
+      seconds = seconds < 10 ? '0' + seconds : seconds;
+      
+      document.getElementById('clock').innerText = `${hours}:${minutes}:${seconds} ${ampm}`;
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('date').innerText = now.toLocaleDateString('bn-BD', options);
+    }
+
+    function switchTab(tab) {
+      if(tab === 'dashboard') {
+        document.getElementById('dashboard-view').classList.remove('hidden');
+        document.getElementById('order-view').classList.add('hidden');
+        document.getElementById('tab-dashboard').className = "bg-blue-600 text-white font-semibold py-2 rounded-lg shadow text-sm";
+        document.getElementById('tab-order').className = "bg-white text-slate-700 font-semibold py-2 rounded-lg shadow text-sm";
+      } else {
+        document.getElementById('dashboard-view').classList.add('hidden');
+        document.getElementById('order-view').classList.remove('hidden');
+        document.getElementById('tab-order').className = "bg-blue-600 text-white font-semibold py-2 rounded-lg shadow text-sm";
+        document.getElementById('tab-dashboard').className = "bg-white text-slate-700 font-semibold py-2 rounded-lg shadow text-sm";
+      }
+    }
+
+    loadProducts();
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+</body>
+</html>
