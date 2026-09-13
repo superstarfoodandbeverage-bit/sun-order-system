@@ -85,17 +85,6 @@
                     <i class="fa-solid fa-file-invoice-dollar text-2xl text-red-200"></i>
                 </div>
             </div>
-
-            <!-- Saved Orders History List -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mt-4">
-                <div class="flex justify-between items-center border-b pb-2 mb-3">
-                    <h3 class="font-bold text-gray-700 text-sm">আজকের সেভ করা অর্ডারসমূহ (<span id="order-count">0</span>)</h3>
-                    <button onclick="clearAllOrders()" class="text-xs text-red-500 font-semibold hover:underline admin-col hidden">সব অর্ডার মুছুন</button>
-                </div>
-                <div id="saved-orders-list" class="space-y-3 max-h-80 overflow-y-auto text-xs">
-                    <p class="text-gray-400 text-center py-4">এখনো কোনো অর্ডার সেভ করা হয়নি</p>
-                </div>
-            </div>
         </div>
 
         <!-- VIEW: NEW ORDER -->
@@ -482,7 +471,6 @@
             alert('অর্ডার সফলভাবে সেভ হয়েছে!');
             resetForm();
             updateDashboard();
-            switchTab('dashboard');
         }
 
         function resetForm() {
@@ -571,10 +559,6 @@
             openPreviewModal(order);
         }
 
-        function previewSavedOrder(index) {
-            openPreviewModal(savedOrders[index]);
-        }
-
         function printModalOrder() {
             if(activeModalOrder) {
                 renderReceiptAndPrint(activeModalOrder);
@@ -635,25 +619,6 @@
             }
         }
 
-        function shareSavedOrder(index, type) {
-            const order = savedOrders[index];
-            const encodedText = buildTextMessage(order);
-            const phone = order.phone.replace(/[^0-9]/g, '');
-
-            if (type === 'whatsapp') {
-                window.open(`https://wa.me/${phone ? '88' + phone : ''}?text=${encodedText}`, '_blank');
-            } else if (type === 'imo') {
-                window.open(`imo://chat?text=${encodedText}`, '_blank');
-            } else if (type === 'sms') {
-                window.open(`sms:${phone}?body=${encodedText}`, '_blank');
-            }
-        }
-
-        function printSavedOrder(index) {
-            const o = savedOrders[index];
-            renderReceiptAndPrint(o);
-        }
-
         function printCurrentOrder() {
             const o = getCurrentOrderData();
             if (!o.shop) {
@@ -705,63 +670,15 @@
             let totalCollected = 0;
             let totalDue = 0;
 
-            const listContainer = document.getElementById('saved-orders-list');
-            listContainer.innerHTML = '';
-
-            if (savedOrders.length === 0) {
-                listContainer.innerHTML = '<p class="text-gray-400 text-center py-4">এখনো কোনো অর্ডার সেভ করা হয়নি</p>';
-            } else {
-                savedOrders.forEach((o, index) => {
-                    totalSales += o.total;
-                    totalCollected += o.collected;
-                    totalDue += o.due;
-
-                    listContainer.innerHTML += `
-                        <div class="p-3 border rounded-lg bg-gray-50 space-y-2">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <div class="font-bold text-blue-900">${o.shop} <span class="text-[10px] text-gray-400">(${o.time})</span></div>
-                                    <div class="text-[11px] text-gray-600">বিল: ৳${o.total} | জমা: ৳${o.collected} | বাকি: ৳${o.due}</div>
-                                    ${o.giftName ? `<div class="text-[11px] text-purple-700 font-semibold">🎁 গিফট: ${o.giftName} (${o.giftQty}টি)</div>` : ''}
-                                </div>
-                                <span class="px-2 py-0.5 text-[10px] font-bold rounded ${o.due > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
-                                    ${o.due > 0 ? 'বাকি' : 'পরিশোধ'}
-                                </span>
-                            </div>
-                            <div class="flex gap-1 pt-1 border-t border-gray-200 justify-end flex-wrap">
-                                <button onclick="previewSavedOrder(${index})" class="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded font-bold flex items-center gap-1 shadow">
-                                    <i class="fa-solid fa-eye"></i> ভিউ
-                                </button>
-                                <button onclick="printSavedOrder(${index})" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-bold flex items-center gap-1 shadow">
-                                    <i class="fa-solid fa-print"></i> প্রিন্ট
-                                </button>
-                                <button onclick="shareSavedOrder(${index}, 'whatsapp')" class="bg-emerald-500 text-white text-[10px] px-2 py-1 rounded font-bold flex items-center gap-1 shadow">
-                                    <i class="fa-brands fa-whatsapp"></i> WA
-                                </button>
-                                <button onclick="shareSavedOrder(${index}, 'imo')" class="bg-sky-500 text-white text-[10px] px-2 py-1 rounded font-bold flex items-center gap-1 shadow">
-                                    <i class="fa-solid fa-comment"></i> imo
-                                </button>
-                                <button onclick="shareSavedOrder(${index}, 'sms')" class="bg-amber-500 text-white text-[10px] px-2 py-1 rounded font-bold flex items-center gap-1 shadow">
-                                    <i class="fa-solid fa-envelope"></i> SMS
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
+            savedOrders.forEach(o => {
+                totalSales += o.total;
+                totalCollected += o.collected;
+                totalDue += o.due;
+            });
 
             document.getElementById('dash-sales').innerText = '৳' + totalSales;
             document.getElementById('dash-collected').innerText = '৳' + totalCollected;
             document.getElementById('dash-due').innerText = '৳' + totalDue;
-            document.getElementById('order-count').innerText = savedOrders.length;
-        }
-
-        function clearAllOrders() {
-            if (confirm('আপনি কি নিশ্চিত যে সমস্ত সেভ করা অর্ডার মুছে ফেলতে চান?')) {
-                savedOrders = [];
-                localStorage.setItem('sun_orders', JSON.stringify(savedOrders));
-                updateDashboard();
-            }
         }
 
         function loadShops() {
