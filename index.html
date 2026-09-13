@@ -86,6 +86,13 @@
                     <i class="fa-solid fa-file-invoice-dollar text-2xl text-red-200"></i>
                 </div>
             </div>
+
+            <!-- View Hidden Saved Orders Button -->
+            <div class="pt-2 text-center">
+                <button onclick="openSavedOrdersModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-xl text-xs shadow flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-box-archive text-amber-400 text-base"></i> ভেতরে সেভ থাকা সকল মেমো/অর্ডার দেখুন
+                </button>
+            </div>
         </div>
 
         <!-- VIEW: NEW ORDER -->
@@ -202,6 +209,28 @@
                             <i class="fa-solid fa-envelope text-sm"></i> SMS
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SAVED ORDERS MODAL (HIDDEN INSIDE) -->
+        <div id="saved-orders-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex justify-center items-center p-3 no-print">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
+                <div class="bg-slate-800 text-white p-3 flex justify-between items-center">
+                    <h3 class="font-bold text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-folder-open text-amber-400"></i> ভেতরে সেভ থাকা সকল অর্ডার তালিকা
+                    </h3>
+                    <button onclick="closeSavedOrdersModal()" class="text-gray-300 hover:text-white text-lg font-bold">&times;</button>
+                </div>
+                
+                <div class="p-3 overflow-y-auto flex-1 bg-slate-50 space-y-2" id="saved-orders-container">
+                    <!-- Dynamic saved list rendering -->
+                </div>
+
+                <div class="p-3 bg-gray-100 border-t text-right">
+                    <button onclick="closeSavedOrdersModal()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                        বন্ধ করুন
+                    </button>
                 </div>
             </div>
         </div>
@@ -477,7 +506,7 @@
                 loadShops();
             }
 
-            alert('অর্ডার সফলভাবে সেভ হয়েছে!');
+            alert('অর্ডারটি সফলভাবে ভেতরে সেভ করা হয়েছে!');
             resetForm();
             updateDashboard();
         }
@@ -495,6 +524,64 @@
             calculateTotal();
         }
 
+        // --- SAVED ORDERS MODAL FUNCTIONS ---
+        function openSavedOrdersModal() {
+            renderSavedOrders();
+            document.getElementById('saved-orders-modal').classList.remove('hidden');
+        }
+
+        function closeSavedOrdersModal() {
+            document.getElementById('saved-orders-modal').classList.add('hidden');
+        }
+
+        function renderSavedOrders() {
+            const container = document.getElementById('saved-orders-container');
+            container.innerHTML = '';
+
+            if (savedOrders.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 py-6 text-xs">কোনো অর্ডার সেভ করা নেই!</p>`;
+                return;
+            }
+
+            savedOrders.forEach((o, index) => {
+                container.innerHTML += `
+                    <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
+                        <div>
+                            <div class="font-bold text-gray-800 text-xs">${o.shop}</div>
+                            <div class="text-[11px] text-gray-500">মোট: ৳${o.total} | জমা: ৳${o.collected} | বাকি: ৳${o.due}</div>
+                            <div class="text-[10px] text-gray-400 mt-0.5"><i class="fa-regular fa-clock"></i> ${o.time}</div>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <button onclick='viewSavedSlip(${o.id})' class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button onclick='deleteSavedOrder(${o.id})' class="bg-red-100 text-red-600 hover:bg-red-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function viewSavedSlip(id) {
+            const order = savedOrders.find(o => o.id === id);
+            if (order) {
+                closeSavedOrdersModal();
+                openPreviewModal(order);
+            }
+        }
+
+        function deleteSavedOrder(id) {
+            if (confirm('অর্ডারটি মুছে ফেলতে চান?')) {
+                savedOrders = savedOrders.filter(o => o.id !== id);
+                localStorage.setItem('sun_orders', JSON.stringify(savedOrders));
+                renderSavedOrders();
+                updateDashboard();
+            }
+        }
+
+        // --- PREVIEW MODAL FUNCTIONS ---
         function openPreviewModal(order) {
             activeModalOrder = order;
             let slipHTML = `
