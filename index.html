@@ -26,7 +26,6 @@
     <header class="bg-blue-600 text-white px-4 py-3 shadow-md flex justify-between items-center no-print">
         <div class="w-12"></div>
         <div class="flex items-center space-x-1">
-            <!-- Sun Logo with Text Inside -->
             <div class="relative flex items-center justify-center">
                 <i class="fa-solid fa-sun text-yellow-400 text-5xl"></i>
                 <span class="absolute text-[11px] font-black text-blue-900 tracking-tighter uppercase select-none">SUN</span>
@@ -63,7 +62,6 @@
 
         <!-- VIEW: SR DASHBOARD -->
         <div id="view-dashboard" class="space-y-3 no-print">
-            <!-- Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
                     <div>
@@ -88,7 +86,6 @@
                 </div>
             </div>
 
-            <!-- View Hidden Saved Orders Button -->
             <div class="pt-2 text-center">
                 <button onclick="openSavedOrdersModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-xl text-xs shadow flex items-center justify-center gap-2">
                     <i class="fa-solid fa-box-archive text-amber-400 text-base"></i> ভেতরে সেভ থাকা সকল মেমো/অর্ডার দেখুন
@@ -98,7 +95,6 @@
 
         <!-- VIEW: NEW ORDER -->
         <div id="view-order" class="hidden space-y-4 no-print">
-            <!-- Shop Info -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
                 <h3 class="font-bold text-gray-700 mb-3 text-sm border-b pb-1">দোকানের তথ্য</h3>
                 <div class="space-y-3">
@@ -120,14 +116,12 @@
                 </div>
             </div>
 
-            <!-- Products List -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-bold text-gray-700 text-sm">আইটেম ও অর্ডার পরিমাণ</h3>
                     <button onclick="toggleAdminPanel()" id="admin-toggle-btn" class="hidden text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-bold">অ্যাডমিন আইটেম প্যানেল</button>
                 </div>
 
-                <!-- Admin Add Item -->
                 <div id="admin-panel" class="hidden bg-amber-50 p-3 rounded-lg border border-amber-200 mb-3">
                     <p class="text-xs font-bold text-amber-900 mb-2">➕ নতুন আইটেম যোগ করুন</p>
                     <div class="flex gap-2 mb-2">
@@ -155,7 +149,6 @@
                 </div>
             </div>
 
-            <!-- Shopkeeper Gift Section -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
                 <h3 class="font-bold text-gray-700 mb-2 text-sm border-b pb-1">🎁 দোকানদার উপহার/গিফট (যদি থাকে)</h3>
                 <div class="grid grid-cols-3 gap-2">
@@ -170,7 +163,6 @@
                 </div>
             </div>
 
-            <!-- Order Summary & Action Buttons -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-3">
                 <div class="flex justify-between items-center border-b pb-2">
                     <span class="text-xs font-semibold text-gray-600">আদায়কৃত নগদ (Collection):</span>
@@ -196,7 +188,6 @@
                     </div>
                 </div>
 
-                <!-- Instant Share Option -->
                 <div class="border-t pt-3 mt-2">
                     <p class="text-xs font-bold text-gray-500 mb-2 text-center">চালান শেয়ার করুন (WhatsApp / imo / SMS):</p>
                     <div class="grid grid-cols-3 gap-2">
@@ -214,7 +205,7 @@
             </div>
         </div>
 
-        <!-- SAVED ORDERS MODAL (HIDDEN INSIDE) -->
+        <!-- SAVED ORDERS MODAL -->
         <div id="saved-orders-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex justify-center items-center p-3 no-print">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
                 <div class="bg-slate-800 text-white p-3 flex justify-between items-center">
@@ -224,9 +215,7 @@
                     <button onclick="closeSavedOrdersModal()" class="text-gray-300 hover:text-white text-lg font-bold">&times;</button>
                 </div>
                 
-                <div class="p-3 overflow-y-auto flex-1 bg-slate-50 space-y-2" id="saved-orders-container">
-                    <!-- Dynamic saved list rendering -->
-                </div>
+                <div class="p-3 overflow-y-auto flex-1 bg-slate-50 space-y-2" id="saved-orders-container"></div>
 
                 <div class="p-3 bg-gray-100 border-t text-right">
                     <button onclick="closeSavedOrdersModal()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-xs font-bold">
@@ -236,7 +225,7 @@
             </div>
         </div>
 
-        <!-- PREVIEW MODAL / POPUP -->
+        <!-- PREVIEW MODAL -->
         <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex justify-center items-center p-3 no-print">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh]">
                 <div class="bg-gray-100 p-3 border-b flex justify-between items-center">
@@ -272,7 +261,7 @@
             </div>
         </div>
 
-        <!-- THERMAL RECEIPT (PRINT AREA) -->
+        <!-- THERMAL RECEIPT -->
         <div id="receipt-print-area" class="hidden bg-white text-black">
             <div class="text-center font-black text-xl tracking-wider uppercase" style="font-size:20px; font-weight:900;">
                 ☀️ SUN PRODUCT
@@ -315,38 +304,33 @@
 
     </main>
 
-    <!-- FIREBASE SDK INCLUSION -->
+    <!-- FIREBASE SETUP WITH YOUR EXACT DATABASE URL -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // TODO: আপনার ফায়ারবেস প্রজেক্টের কন্সোল থেকে অবজেক্টটি কপি করে নিচে বসান
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyDummyKeyReplaceIfYouHaveOne",
+            authDomain: "sun-product-sell.firebaseapp.com",
+            databaseURL: "https://sun-product-sell-default-rtdb.firebaseio.com",
+            projectId: "sun-product-sell",
+            storageBucket: "sun-product-sell.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Global variables updated via Firebase realtime listeners
         window.products = [];
         window.savedOrders = [];
         window.savedShops = [];
         window.db = db;
 
-        // Firebase Realtime DB Refs
         const productsRef = ref(db, 'products');
         const ordersRef = ref(db, 'orders');
         const shopsRef = ref(db, 'shops');
 
-        // Sync Products
         onValue(productsRef, (snapshot) => {
             const data = snapshot.val();
             window.products = [];
@@ -355,7 +339,6 @@
                     window.products.push({ id: key, ...data[key] });
                 });
             } else {
-                // Default product seed if empty
                 const defaults = [
                     { name: 'সান 500gm (65 পিসে ১ বস্তা)', price: 60 },
                     { name: 'সান 200gm (150 পিসে ১ বস্তা)', price: 22 }
@@ -365,7 +348,6 @@
             renderProducts();
         });
 
-        // Sync Orders
         onValue(ordersRef, (snapshot) => {
             const data = snapshot.val();
             window.savedOrders = [];
@@ -380,7 +362,6 @@
             }
         });
 
-        // Sync Shops
         onValue(shopsRef, (snapshot) => {
             const data = snapshot.val();
             window.savedShops = [];
@@ -392,7 +373,6 @@
             loadShops();
         });
 
-        // Database helper methods
         window.fbSaveOrder = function(orderData) {
             push(ordersRef, orderData);
             if(!window.savedShops.includes(orderData.shop)) {
@@ -636,7 +616,7 @@
                             <button onclick='viewSavedSlip("${o.id}")' class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
-                            <button onclick='deleteSavedOrder("${o.id}")' class="bg-red-100 text-red-600 hover:bg-red-200 px-2.5 py-1.5 rounded-lg text-xs font-bold" title="মুছে ফেলার জন্য পাসওয়ার্ড প্রয়োজন">
+                            <button onclick='deleteSavedOrder("${o.id}")' class="bg-red-100 text-red-600 hover:bg-red-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
