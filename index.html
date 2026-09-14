@@ -315,8 +315,105 @@
 
     </main>
 
+    <!-- FIREBASE SDK INCLUSION -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // TODO: আপনার ফায়ারবেস প্রজেক্টের কন্সোল থেকে অবজেক্টটি কপি করে নিচে বসান
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Global variables updated via Firebase realtime listeners
+        window.products = [];
+        window.savedOrders = [];
+        window.savedShops = [];
+        window.db = db;
+
+        // Firebase Realtime DB Refs
+        const productsRef = ref(db, 'products');
+        const ordersRef = ref(db, 'orders');
+        const shopsRef = ref(db, 'shops');
+
+        // Sync Products
+        onValue(productsRef, (snapshot) => {
+            const data = snapshot.val();
+            window.products = [];
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    window.products.push({ id: key, ...data[key] });
+                });
+            } else {
+                // Default product seed if empty
+                const defaults = [
+                    { name: 'সান 500gm (65 পিসে ১ বস্তা)', price: 60 },
+                    { name: 'সান 200gm (150 পিসে ১ বস্তা)', price: 22 }
+                ];
+                defaults.forEach(p => push(productsRef, p));
+            }
+            renderProducts();
+        });
+
+        // Sync Orders
+        onValue(ordersRef, (snapshot) => {
+            const data = snapshot.val();
+            window.savedOrders = [];
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    window.savedOrders.push({ id: key, ...data[key] });
+                });
+            }
+            updateDashboard();
+            if(!document.getElementById('saved-orders-modal').classList.contains('hidden')) {
+                renderSavedOrders();
+            }
+        });
+
+        // Sync Shops
+        onValue(shopsRef, (snapshot) => {
+            const data = snapshot.val();
+            window.savedShops = [];
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    window.savedShops.push(data[key].name);
+                });
+            }
+            loadShops();
+        });
+
+        // Database helper methods
+        window.fbSaveOrder = function(orderData) {
+            push(ordersRef, orderData);
+            if(!window.savedShops.includes(orderData.shop)) {
+                push(shopsRef, { name: orderData.shop });
+            }
+        };
+
+        window.fbDeleteOrder = function(id) {
+            remove(ref(db, 'orders/' + id));
+        };
+
+        window.fbAddProduct = function(product) {
+            push(productsRef, product);
+        };
+
+        window.fbDeleteProduct = function(id) {
+            remove(ref(db, 'products/' + id));
+        };
+    </script>
+
     <script>
-        // নতুন পিন/পাসওয়ার্ড
         const ADMIN_PIN = "590982";
 
         function updateClock() {
@@ -388,18 +485,12 @@
             document.getElementById('tab-' + tab).className = 'flex-1 py-2 px-3 rounded-lg font-bold text-sm text-white bg-blue-600 shadow';
         }
 
-        let products = JSON.parse(localStorage.getItem('sun_products')) || [
-            { id: 1, name: 'সান 500gm (65 পিসে ১ বস্তা)', price: 60 },
-            { id: 2, name: 'সান 200gm (150 পিসে ১ বস্তা)', price: 22 }
-        ];
-
-        let savedOrders = JSON.parse(localStorage.getItem('sun_orders')) || [];
         let activeModalOrder = null;
 
         function renderProducts() {
             const tbody = document.getElementById('product-list-body');
             tbody.innerHTML = '';
-            products.forEach((p, index) => {
+            (window.products || []).forEach((p, index) => {
                 tbody.innerHTML += `
                     <tr class="border-b">
                         <td class="p-2 font-medium">${p.name}</td>
@@ -421,7 +512,7 @@
                         </td>
                         <td class="p-2 text-right font-semibold item-total">৳0</td>
                         <td class="p-2 text-center admin-col ${currentMode === 'Admin' ? '' : 'hidden'}">
-                            <button onclick="deleteProduct(${p.id})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="deleteProduct('${p.id}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -433,7 +524,7 @@
             const rows = document.querySelectorAll('#product-list-body tr');
             rows.forEach((row, i) => {
                 const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
-                const sub = qty * (products[i] ? products[i].price : 0);
+                const sub = qty * (window.products[i] ? window.products[i].price : 0);
                 row.querySelector('.item-total').innerText = '৳' + sub;
                 total += sub;
             });
@@ -457,11 +548,11 @@
                 const unit = row.querySelector('.unit-select').value;
                 if(qty > 0 || freeQty > 0) {
                     itemsOrdered.push({
-                        name: products[i].name,
+                        name: window.products[i].name,
                         qty: qty,
                         unit: unit,
                         freeQty: freeQty,
-                        subtotal: qty * products[i].price
+                        subtotal: qty * window.products[i].price
                     });
                 }
             });
@@ -493,24 +584,12 @@
                 return;
             }
 
-            const newOrder = {
-                id: Date.now(),
-                ...orderData
-            };
-
-            savedOrders.push(newOrder);
-            localStorage.setItem('sun_orders', JSON.stringify(savedOrders));
-
-            let shops = JSON.parse(localStorage.getItem('sun_shops')) || [];
-            if(!shops.includes(orderData.shop)) {
-                shops.push(orderData.shop);
-                localStorage.setItem('sun_shops', JSON.stringify(shops));
-                loadShops();
+            if (window.fbSaveOrder) {
+                window.fbSaveOrder(orderData);
+                alert('অর্ডারটি ফায়ারবেসে সফলভাবে সেভ করা হয়েছে!');
             }
 
-            alert('অর্ডারটি সফলভাবে ভেতরে সেভ করা হয়েছে!');
             resetForm();
-            updateDashboard();
         }
 
         function resetForm() {
@@ -526,7 +605,6 @@
             calculateTotal();
         }
 
-        // --- SAVED ORDERS MODAL FUNCTIONS ---
         function openSavedOrdersModal() {
             renderSavedOrders();
             document.getElementById('saved-orders-modal').classList.remove('hidden');
@@ -540,12 +618,13 @@
             const container = document.getElementById('saved-orders-container');
             container.innerHTML = '';
 
-            if (savedOrders.length === 0) {
+            const list = window.savedOrders || [];
+            if (list.length === 0) {
                 container.innerHTML = `<p class="text-center text-gray-500 py-6 text-xs">কোনো অর্ডার সেভ করা নেই!</p>`;
                 return;
             }
 
-            savedOrders.forEach((o, index) => {
+            list.forEach((o) => {
                 container.innerHTML += `
                     <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
                         <div>
@@ -554,10 +633,10 @@
                             <div class="text-[10px] text-gray-400 mt-0.5"><i class="fa-regular fa-clock"></i> ${o.time}</div>
                         </div>
                         <div class="flex gap-1.5">
-                            <button onclick='viewSavedSlip(${o.id})' class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
+                            <button onclick='viewSavedSlip("${o.id}")' class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
-                            <button onclick='deleteSavedOrder(${o.id})' class="bg-red-100 text-red-600 hover:bg-red-200 px-2.5 py-1.5 rounded-lg text-xs font-bold" title="মুছে ফেলার জন্য পাসওয়ার্ড প্রয়োজন">
+                            <button onclick='deleteSavedOrder("${o.id}")' class="bg-red-100 text-red-600 hover:bg-red-200 px-2.5 py-1.5 rounded-lg text-xs font-bold" title="মুছে ফেলার জন্য পাসওয়ার্ড প্রয়োজন">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
@@ -567,35 +646,27 @@
         }
 
         function viewSavedSlip(id) {
-            const order = savedOrders.find(o => o.id === id);
+            const order = (window.savedOrders || []).find(o => o.id === id);
             if (order) {
                 closeSavedOrdersModal();
                 openPreviewModal(order);
             }
         }
 
-        // 🔒 পাসওয়ার্ড দিয়ে মেমো ডিলিট করার সুনির্দিষ্ট সুরক্ষামূলক ফাংশন
         function deleteSavedOrder(id) {
             const pass = prompt("মেমোটি ডিলিট করতে পাসওয়ার্ড দিন:");
+            if (pass === null || pass.trim() === "") return;
             
-            // খালি পাসওয়ার্ড দিলে বা ক্যান্সেল করলে ডিলিট হবে না
-            if (pass === null || pass.trim() === "") {
-                return;
-            }
-            
-            // সঠিক পাসওয়ার্ড (590982) দিলে ডিলিট হবে
             if (pass === ADMIN_PIN) {
-                savedOrders = savedOrders.filter(o => o.id !== id);
-                localStorage.setItem('sun_orders', JSON.stringify(savedOrders));
-                renderSavedOrders();
-                updateDashboard();
-                alert("মেমোটি সফলভাবে মুছে ফেলা হয়েছে।");
+                if(window.fbDeleteOrder) {
+                    window.fbDeleteOrder(id);
+                    alert("মেমোটি ফায়ারবেস থেকে সফলভাবে মুছে ফেলা হয়েছে।");
+                }
             } else {
                 alert("ভুল পাসওয়ার্ড! পাসওয়ার্ড ছাড়া মেমো ডিলিট করা সম্ভব নয়।");
             }
         }
 
-        // --- PREVIEW MODAL FUNCTIONS ---
         function openPreviewModal(order) {
             activeModalOrder = order;
             let slipHTML = `
@@ -620,7 +691,7 @@
                     <tbody>
             `;
 
-            order.items.forEach(item => {
+            (order.items || []).forEach(item => {
                 slipHTML += `
                     <tr>
                         <td class="py-1">${item.name}</td>
@@ -696,7 +767,7 @@
             msg += `দোকান: ${order.shop}\n`;
             if(order.phone) msg += `মোবাইল: ${order.phone}\n`;
             msg += `--------------------------\n`;
-            order.items.forEach(item => {
+            (order.items || []).forEach(item => {
                 msg += `• ${item.name}\n  পরিমাণ: ${item.qty} ${item.unit}`;
                 if(item.freeQty > 0) msg += ` (ফ্রি: ${item.freeQty})`;
                 msg += ` = ৳${item.subtotal}\n`;
@@ -747,7 +818,7 @@
 
             const tbody = document.getElementById('r-items-body');
             tbody.innerHTML = '';
-            order.items.forEach(item => {
+            (order.items || []).forEach(item => {
                 tbody.innerHTML += `
                     <tr>
                         <td>${item.name}</td>
@@ -781,7 +852,7 @@
             let totalCollected = 0;
             let totalDue = 0;
 
-            savedOrders.forEach(o => {
+            (window.savedOrders || []).forEach(o => {
                 totalSales += o.total;
                 totalCollected += o.collected;
                 totalDue += o.due;
@@ -793,19 +864,18 @@
         }
 
         function loadShops() {
-            let shops = JSON.parse(localStorage.getItem('sun_shops')) || [];
             const list = document.getElementById('saved-shops');
             list.innerHTML = '';
-            shops.forEach(s => list.innerHTML += `<option value="${s}">`);
+            (window.savedShops || []).forEach(s => list.innerHTML += `<option value="${s}">`);
         }
 
         function addNewProduct() {
             const name = document.getElementById('new-item-name').value.trim();
             const price = parseFloat(document.getElementById('new-item-price').value);
             if(name && !isNaN(price)) {
-                products.push({ id: Date.now(), name, price });
-                localStorage.setItem('sun_products', JSON.stringify(products));
-                renderProducts();
+                if(window.fbAddProduct) {
+                    window.fbAddProduct({ name, price });
+                }
                 document.getElementById('new-item-name').value = '';
                 document.getElementById('new-item-price').value = '';
             }
@@ -814,18 +884,13 @@
         function deleteProduct(id) {
             const pass = prompt("আইটেমটি ডিলিট করতে পাসওয়ার্ড দিন:");
             if(pass === ADMIN_PIN) {
-                products = products.filter(p => p.id !== id);
-                localStorage.setItem('sun_products', JSON.stringify(products));
-                renderProducts();
-                calculateTotal();
+                if(window.fbDeleteProduct) {
+                    window.fbDeleteProduct(id);
+                }
             } else if(pass !== null) {
                 alert("ভুল পাসওয়ার্ড!");
             }
         }
-
-        renderProducts();
-        loadShops();
-        updateDashboard();
     </script>
 </body>
 </html>
